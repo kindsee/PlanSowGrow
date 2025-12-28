@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Bancales - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-grid-3x3-gap"></i> Bancales</h1>
+    <a href="{{ url_for('beds.create_bed') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nuevo Bancal
+    </a>
+</div>
+
+{% if beds %}
+    <div class="row">
+        {% for bed in beds %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if not bed.is_active %}border-secondary{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ bed.name }}
+                        {% if not bed.is_active %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </h5>
+                    {% if bed.location %}
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-geo-alt"></i> {{ bed.location }}
+                        </p>
+                    {% endif %}
+                    {% if bed.description %}
+                        <p class="card-text">{{ bed.description }}</p>
+                    {% endif %}
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Dimensiones: 4m x 1m
+                        </small>
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('beds.view_bed', bed_id=bed.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> Ver Detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay bancales registrados.
+        <a href="{{ url_for('beds.create_bed') }}">Crea tu primer bancal</a>.
+    </div>
+{% endif %}
+{% endblock %}

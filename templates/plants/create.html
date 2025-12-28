@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Planta - PlanSowGrow{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-plus-circle"></i> Nueva Planta</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre Común *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scientific_name" class="form-label">Nombre Científico</label>
+                        <input type="text" class="form-control" id="scientific_name" name="scientific_name"
+                               placeholder="Ej: Solanum lycopersicum">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="growth_days" class="form-label">Días de Crecimiento</label>
+                                <input type="number" class="form-control" id="growth_days" name="growth_days"
+                                       placeholder="Días hasta la cosecha">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="harvest_period_days" class="form-label">Periodo de Cosecha (días)</label>
+                                <input type="number" class="form-control" id="harvest_period_days" 
+                                       name="harvest_period_days" placeholder="Duración de la cosecha">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"
+                                  placeholder="Requisitos especiales, consejos de cultivo, etc."></textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Crear Planta
+                        </button>
+                        <a href="{{ url_for('plants.list_plants') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

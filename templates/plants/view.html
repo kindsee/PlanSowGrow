@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ plant.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('plants.list_plants') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Plantas
+    </a>
+</div>
+
+<h1 class="mb-3"><i class="bi bi-flower2"></i> {{ plant.name }}</h1>
+{% if plant.scientific_name %}
+<p class="text-muted"><em>{{ plant.scientific_name }}</em></p>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Información de la Planta</h5>
+                
+                {% if plant.description %}
+                <p>{{ plant.description }}</p>
+                {% endif %}
+                
+                <dl class="row">
+                    {% if plant.growth_days %}
+                    <dt class="col-sm-4">Días de Crecimiento:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-info">{{ plant.growth_days }} días</span>
+                    </dd>
+                    {% endif %}
+                    
+                    {% if plant.harvest_period_days %}
+                    <dt class="col-sm-4">Periodo de Cosecha:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-success">{{ plant.harvest_period_days }} días</span>
+                    </dd>
+                    {% endif %}
+                    
+                    {% if plant.notes %}
+                    <dt class="col-sm-4">Notas:</dt>
+                    <dd class="col-sm-8">{{ plant.notes }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if pests %}
+<h2 class="mb-3">Plagas Comunes</h2>
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Plaga</th>
+                <th>Severidad</th>
+                <th>Notas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pest_info in pests %}
+            <tr>
+                <td>{{ pest_info.pest.name }}</td>
+                <td>
+                    {% if pest_info.severity == 'high' %}
+                        <span class="badge bg-danger">Alta</span>
+                    {% elif pest_info.severity == 'medium' %}
+                        <span class="badge bg-warning">Media</span>
+                    {% elif pest_info.severity == 'low' %}
+                        <span class="badge bg-info">Baja</span>
+                    {% endif %}
+                </td>
+                <td>{{ pest_info.notes or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Tratamientos - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-droplet"></i> Tratamientos Ecológicos</h1>
+    <a href="{{ url_for('treatments.create_treatment') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nuevo Tratamiento
+    </a>
+</div>
+
+{% if treatments %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Tratamiento</th>
+                    <th>Para Plaga</th>
+                    <th>Frecuencia</th>
+                    <th>Método</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for treatment in treatments %}
+                <tr>
+                    <td><strong>{{ treatment.name }}</strong></td>
+                    <td>{{ treatment.pest.name }}</td>
+                    <td>
+                        {% if treatment.frequency_days %}
+                            Cada {{ treatment.frequency_days }} días
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ treatment.application_method or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay tratamientos registrados.
+        <a href="{{ url_for('treatments.create_treatment') }}">Crea el primero</a>.
+    </div>
+{% endif %}
+{% endblock %}

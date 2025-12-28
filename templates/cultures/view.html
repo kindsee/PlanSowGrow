@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Cultivo - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('cultures.list_cultures') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Cultivos
+    </a>
+</div>
+
+<h1 class="mb-3">
+    <i class="bi bi-calendar-check"></i> Cultivo en {{ culture.bed.name }}
+    {% if culture.is_active %}
+        <span class="badge bg-success">Activo</span>
+    {% else %}
+        <span class="badge bg-secondary">Cerrado</span>
+    {% endif %}
+</h1>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Información del Cultivo</h5>
+                <dl class="row">
+                    <dt class="col-sm-3">Bancal:</dt>
+                    <dd class="col-sm-9">{{ culture.bed.name }}</dd>
+                    
+                    <dt class="col-sm-3">Fecha Inicio:</dt>
+                    <dd class="col-sm-9">{{ culture.start_date.strftime('%d/%m/%Y') }}</dd>
+                    
+                    {% if culture.end_date %}
+                    <dt class="col-sm-3">Fecha Fin:</dt>
+                    <dd class="col-sm-9">{{ culture.end_date.strftime('%d/%m/%Y') }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Tipo de Inicio:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-info">{{ culture.start_type }}</span></dd>
+                    
+                    <dt class="col-sm-3">Plantas:</dt>
+                    <dd class="col-sm-9">
+                        {% for cp in culture.plants %}
+                            <span class="badge bg-light text-dark me-1">{{ cp.plant.name }}</span>
+                        {% endfor %}
+                    </dd>
+                    
+                    {% if culture.notes %}
+                    <dt class="col-sm-3">Notas:</dt>
+                    <dd class="col-sm-9">{{ culture.notes }}</dd>
+                    {% endif %}
+                </dl>
+                
+                {% if culture.is_active %}
+                <form method="POST" action="{{ url_for('cultures.close_culture', culture_id=culture.id) }}"
+                      onsubmit="return confirm('¿Estás seguro de cerrar este cultivo?');">
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Fecha de Cierre</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ today }}" style="max-width: 200px;">
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-x-circle"></i> Cerrar Cultivo
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

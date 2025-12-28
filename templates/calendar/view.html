@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario - PlanSowGrow{% endblock %}
+
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-calendar3"></i> Calendario de Tareas</h1>
+
+{% if events %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Bancal</th>
+                    <th>Acción</th>
+                    <th>Estado</th>
+                    <th>Notas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr class="{% if event.completed %}table-secondary{% endif %}">
+                    <td>{{ event.scheduled_date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ event.culture.bed.name }}</td>
+                    <td>
+                        {% if event.care_action %}
+                            <i class="bi bi-scissors"></i> {{ event.care_action.name }}
+                        {% elif event.treatment %}
+                            <i class="bi bi-bug"></i> {{ event.treatment.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if event.completed %}
+                            <span class="badge bg-success">Completado</span>
+                            <small class="text-muted">({{ event.completed_date.strftime('%d/%m/%Y') }})</small>
+                        {% else %}
+                            <span class="badge bg-warning">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.notes or '-' }}</td>
+                    <td>
+                        {% if not event.completed %}
+                        <form method="POST" action="{{ url_for('calendar.complete_event', event_id=event.id) }}" 
+                              style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-success">
+                                <i class="bi bi-check-circle"></i> Completar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay eventos programados para los próximos 30 días.
+    </div>
+{% endif %}
+{% endblock %}

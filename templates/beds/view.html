@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ bed.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('beds.list_beds') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Bancales
+    </a>
+</div>
+
+<h1 class="mb-3">
+    <i class="bi bi-grid-3x3-gap"></i> {{ bed.name }}
+    {% if not bed.is_active %}
+        <span class="badge bg-secondary">Inactivo</span>
+    {% endif %}
+</h1>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Información del Bancal</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Dimensiones:</dt>
+                    <dd class="col-sm-9">4m x 1m</dd>
+                    
+                    {% if bed.location %}
+                    <dt class="col-sm-3">Ubicación:</dt>
+                    <dd class="col-sm-9">{{ bed.location }}</dd>
+                    {% endif %}
+                    
+                    {% if bed.description %}
+                    <dt class="col-sm-3">Descripción:</dt>
+                    <dd class="col-sm-9">{{ bed.description }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-3">Creado:</dt>
+                    <dd class="col-sm-9">{{ bed.created_at.strftime('%d/%m/%Y') }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="mb-3">Cultivos</h2>
+<a href="{{ url_for('cultures.create_culture') }}" class="btn btn-success mb-3">
+    <i class="bi bi-plus-circle"></i> Nuevo Cultivo
+</a>
+
+{% if cultures %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Estado</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Tipo Inicio</th>
+                    <th>Plantas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for culture in cultures %}
+                <tr>
+                    <td>
+                        {% if culture.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Cerrado</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ culture.start_date.strftime('%d/%m/%Y') }}</td>
+                    <td>
+                        {% if culture.end_date %}
+                            {{ culture.end_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ culture.start_type }}</span>
+                    </td>
+                    <td>
+                        {% for cp in culture.plants %}
+                            <span class="badge bg-light text-dark">{{ cp.plant.name }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('cultures.view_culture', culture_id=culture.id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay cultivos registrados en este bancal.
+    </div>
+{% endif %}
+{% endblock %}

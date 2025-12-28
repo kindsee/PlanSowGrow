@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Cultivos - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-calendar-check"></i> Cultivos Activos</h1>
+    <a href="{{ url_for('cultures.create_culture') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nuevo Cultivo
+    </a>
+</div>
+
+{% if cultures %}
+    <div class="row">
+        {% for culture in cultures %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ culture.bed.name }}
+                        <span class="badge bg-success">Activo</span>
+                    </h5>
+                    <p class="card-text">
+                        <strong>Inicio:</strong> {{ culture.start_date.strftime('%d/%m/%Y') }}<br>
+                        <strong>Tipo:</strong> <span class="badge bg-info">{{ culture.start_type }}</span>
+                    </p>
+                    <p class="card-text">
+                        <strong>Plantas:</strong><br>
+                        {% for cp in culture.plants %}
+                            <span class="badge bg-light text-dark me-1">{{ cp.plant.name }}</span>
+                        {% endfor %}
+                    </p>
+                    {% if culture.notes %}
+                    <p class="card-text"><small class="text-muted">{{ culture.notes }}</small></p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('cultures.view_culture', culture_id=culture.id) }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> Ver Detalles
+                    </a>
+                    <form method="POST" action="{{ url_for('cultures.close_culture', culture_id=culture.id) }}" 
+                          style="display:inline;" onsubmit="return confirm('¿Cerrar este cultivo?');">
+                        <input type="hidden" name="end_date" value="{{ today }}">
+                        <button type="submit" class="btn btn-sm btn-warning">
+                            <i class="bi bi-x-circle"></i> Cerrar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay cultivos activos.
+        <a href="{{ url_for('cultures.create_culture') }}">Inicia tu primer cultivo</a>.
+    </div>
+{% endif %}
+{% endblock %}

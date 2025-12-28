@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Plantas - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-flower2"></i> Catálogo de Plantas</h1>
+    <a href="{{ url_for('plants.create_plant') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nueva Planta
+    </a>
+</div>
+
+{% if plants %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Nombre Científico</th>
+                    <th>Días de Crecimiento</th>
+                    <th>Días de Cosecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plant in plants %}
+                <tr>
+                    <td><strong>{{ plant.name }}</strong></td>
+                    <td><em>{{ plant.scientific_name or '-' }}</em></td>
+                    <td>
+                        {% if plant.growth_days %}
+                            <span class="badge bg-info">{{ plant.growth_days }} días</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if plant.harvest_period_days %}
+                            <span class="badge bg-success">{{ plant.harvest_period_days }} días</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('plants.view_plant', plant_id=plant.id) }}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay plantas registradas.
+        <a href="{{ url_for('plants.create_plant') }}">Crea tu primera planta</a>.
+    </div>
+{% endif %}
+{% endblock %}

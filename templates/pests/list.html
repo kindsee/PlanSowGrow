@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Plagas - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-bug"></i> Catálogo de Plagas</h1>
+    <a href="{{ url_for('pests.create_pest') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Nueva Plaga
+    </a>
+</div>
+
+{% if pests %}
+    <div class="row">
+        {% for pest in pests %}
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ pest.name }}</h5>
+                    {% if pest.scientific_name %}
+                    <p class="text-muted"><em>{{ pest.scientific_name }}</em></p>
+                    {% endif %}
+                    {% if pest.description %}
+                    <p class="card-text">{{ pest.description }}</p>
+                    {% endif %}
+                    {% if pest.symptoms %}
+                    <p class="card-text">
+                        <strong>Síntomas:</strong> {{ pest.symptoms }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay plagas registradas.
+        <a href="{{ url_for('pests.create_pest') }}">Registra la primera</a>.
+    </div>
+{% endif %}
+{% endblock %}
