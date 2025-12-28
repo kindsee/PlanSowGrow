@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Home - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">
+                <i class="bi bi-flower1 text-success"></i> Welcome to PlanSowGrow
+            </h1>
+            <p class="lead">Plan, organize, and track your garden with clean architecture and best practices.</p>
+            <hr class="my-4">
+            <p>Manage your gardens, beds, and growing seasons with a system designed for clarity and maintainability.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-geo-alt-fill text-success"></i> Gardens
+                </h5>
+                <p class="card-text">
+                    {% if garden_count > 0 %}
+                        You have <strong>{{ garden_count }}</strong> active garden(s).
+                    {% else %}
+                        No gardens yet. Create your first garden to get started!
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('gardens.list_gardens') }}" class="btn btn-success">
+                    <i class="bi bi-list"></i> View Gardens
+                </a>
+                <a href="{{ url_for('gardens.create_garden') }}" class="btn btn-outline-success">
+                    <i class="bi bi-plus-circle"></i> New Garden
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-calendar3 text-success"></i> Current Season
+                </h5>
+                <p class="card-text">
+                    {% if current_season %}
+                        Current season: <strong>{{ current_season.name }}</strong><br>
+                        <small class="text-muted">
+                            Started: {{ current_season.start_date.strftime('%B %d, %Y') }}
+                        </small>
+                    {% else %}
+                        No active season. Create a season to start planning!
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('seasons.list_seasons') }}" class="btn btn-success">
+                    <i class="bi bi-list"></i> View Seasons
+                </a>
+                <a href="{{ url_for('seasons.create_season') }}" class="btn btn-outline-success">
+                    <i class="bi bi-plus-circle"></i> New Season
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Architecture Highlights</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success"></i> <strong>Clean Architecture:</strong> Separation of concerns with distinct layers</li>
+                    <li><i class="bi bi-check-circle text-success"></i> <strong>Service Layer:</strong> All business logic lives in services, never in routes</li>
+                    <li><i class="bi bi-check-circle text-success"></i> <strong>Explicit Models:</strong> Well-documented database entities with clear relationships</li>
+                    <li><i class="bi bi-check-circle text-success"></i> <strong>Historical Data:</strong> Soft delete support ensures data is never permanently removed</li>
+                    <li><i class="bi bi-check-circle text-success"></i> <strong>Period Management:</strong> Built-in support for date ranges and time periods</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

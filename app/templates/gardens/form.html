@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if garden else 'New' }} Garden - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <h1 class="mb-4">
+            <i class="bi bi-geo-alt-fill text-success"></i> 
+            {% if garden %}Edit{% else %}New{% endif %} Garden
+        </h1>
+        
+        <form method="POST">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="name" name="name" 
+                       value="{{ garden.name if garden else '' }}" required maxlength="100">
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ garden.description if garden else '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="location" class="form-label">Location</label>
+                <input type="text" class="form-control" id="location" name="location" 
+                       value="{{ garden.location if garden else '' }}" maxlength="200">
+                <small class="form-text text-muted">Physical location or address of the garden</small>
+            </div>
+            
+            <div class="mb-3">
+                <label for="size_sqm" class="form-label">Size (m²)</label>
+                <input type="number" step="0.01" class="form-control" id="size_sqm" name="size_sqm" 
+                       value="{{ garden.size_sqm if garden and garden.size_sqm else '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3">{{ garden.notes if garden else '' }}</textarea>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-check-circle"></i> Save
+                </button>
+                <a href="{{ url_for('gardens.list_gardens') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

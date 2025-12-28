@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Gardens - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-3">
+            <i class="bi bi-geo-alt-fill text-success"></i> Gardens
+        </h1>
+        <a href="{{ url_for('gardens.create_garden') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> New Garden
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% if gardens %}
+        {% for garden in gardens %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ garden.name }}</h5>
+                    {% if garden.description %}
+                        <p class="card-text">{{ garden.description[:100] }}{% if garden.description|length > 100 %}...{% endif %}</p>
+                    {% endif %}
+                    <ul class="list-unstyled">
+                        {% if garden.location %}
+                            <li><i class="bi bi-pin-map text-muted"></i> {{ garden.location }}</li>
+                        {% endif %}
+                        {% if garden.size_sqm %}
+                            <li><i class="bi bi-rulers text-muted"></i> {{ garden.size_sqm }} m²</li>
+                        {% endif %}
+                        <li><i class="bi bi-grid text-muted"></i> {{ garden.bed_count }} bed(s)</li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('gardens.view_garden', garden_id=garden.id) }}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <a href="{{ url_for('gardens.edit_garden', garden_id=garden.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No gardens yet. Create your first garden to get started!
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

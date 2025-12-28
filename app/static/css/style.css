@@ -1,0 +1,83 @@
+/* Custom styles for PlanSowGrow */
+
+:root {
+    --primary-green: #198754;
+    --light-green: #d1e7dd;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Card styling */
+.card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Jumbotron replacement for Bootstrap 5 */
+.jumbotron {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+}
+
+/* Footer styling */
+footer {
+    margin-top: auto;
+}
+
+/* Form styling */
+.form-label {
+    font-weight: 500;
+}
+
+/* Button group spacing */
+.d-flex.gap-2 > * {
+    margin-right: 0.5rem;
+}
+
+.d-flex.gap-2 > *:last-child {
+    margin-right: 0;
+}
+
+/* List group styling */
+.list-group-item {
+    border-left: 3px solid transparent;
+}
+
+.list-group-item:hover {
+    border-left-color: var(--primary-green);
+    background-color: var(--light-green);
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+}
+
+/* Responsive table */
+.table-responsive {
+    border-radius: 0.25rem;
+}
+
+/* Icon spacing */
+.bi {
+    vertical-align: -0.125em;
+}

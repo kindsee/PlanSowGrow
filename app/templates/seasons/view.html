@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}{{ season.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('seasons.list_seasons') }}">Seasons</a></li>
+                <li class="breadcrumb-item active">{{ season.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>
+            <i class="bi bi-calendar3 text-success"></i> {{ season.name }}
+            {% if season.is_active %}
+                <span class="badge bg-success">Active</span>
+            {% elif season.is_closed %}
+                <span class="badge bg-secondary">Closed</span>
+            {% else %}
+                <span class="badge bg-info">Upcoming</span>
+            {% endif %}
+        </h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('seasons.edit_season', season_id=season.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        {% if season.is_active and not season.end_date %}
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#closeModal">
+                <i class="bi bi-calendar-x"></i> Close
+            </button>
+        {% elif season.is_closed %}
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#reopenModal">
+                <i class="bi bi-calendar-plus"></i> Reopen
+            </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Details</h5>
+            </div>
+            <div class="card-body">
+                {% if season.description %}
+                    <p>{{ season.description }}</p>
+                {% endif %}
+                
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Start Date:</dt>
+                    <dd class="col-sm-8">{{ season.start_date.strftime('%B %d, %Y') }}</dd>
+                    
+                    <dt class="col-sm-4">End Date:</dt>
+                    <dd class="col-sm-8">
+                        {% if season.end_date %}
+                            {{ season.end_date.strftime('%B %d, %Y') }}
+                        {% else %}
+                            <span class="text-muted">Ongoing</span>
+                        {% endif %}
+                    </dd>
+                    
+                    {% if season.duration_days %}
+                        <dt class="col-sm-4">Duration:</dt>
+                        <dd class="col-sm-8">{{ season.duration_days }} days</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Created:</dt>
+                    <dd class="col-sm-8">{{ season.created_at.strftime('%B %d, %Y') }}</dd>
+                </dl>
+                
+                {% if season.notes %}
+                    <hr>
+                    <h6>Notes</h6>
+                    <p class="mb-0">{{ season.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Status</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-calendar-check text-success"></i> 
+                        <strong>Start:</strong> {{ season.start_date.strftime('%b %d, %Y') }}
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-calendar-x text-{% if season.end_date %}danger{% else %}muted{% endif %}"></i> 
+                        <strong>End:</strong> 
+                        {% if season.end_date %}
+                            {{ season.end_date.strftime('%b %d, %Y') }}
+                        {% else %}
+                            Not set
+                        {% endif %}
+                    </li>
+                    {% if season.duration_days %}
+                        <li class="mb-2">
+                            <i class="bi bi-clock text-success"></i> 
+                            <strong>Duration:</strong> {{ season.duration_days }} days
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Season Modal -->
+<div class="modal fade" id="closeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('seasons.close_season', season_id=season.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Close Season</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Set the end date for this season to close it.</p>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ 'now'|date('%Y-%m-%d') }}">
+                    </div>
+                    <p class="text-muted">Historical data will be preserved. You can reopen the season later if needed.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Close Season</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reopen Season Modal -->
+<div class="modal fade" id="reopenModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reopen Season</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to reopen this season?</p>
+                <p class="text-muted">The end date will be removed and the season will become active again.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ url_for('seasons.reopen_season', season_id=season.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-info">Reopen</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

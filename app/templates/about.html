@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}About - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <h1 class="mb-4"><i class="bi bi-info-circle text-success"></i> About PlanSowGrow</h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Mission</h5>
+                <p class="card-text">
+                    PlanSowGrow is a garden planning and tracking application built with clean architecture
+                    principles and modern web development best practices.
+                </p>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Technology Stack</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Backend:</strong> Python 3 + Flask</li>
+                    <li><strong>ORM:</strong> SQLAlchemy</li>
+                    <li><strong>Database:</strong> MariaDB</li>
+                    <li><strong>Frontend:</strong> HTML + Bootstrap 5 + Jinja2</li>
+                    <li><strong>Architecture:</strong> Clean Architecture with service layer</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Design Principles</h5>
+            </div>
+            <div class="card-body">
+                <h6>Separation of Concerns</h6>
+                <p>
+                    The application is organized into distinct layers:
+                </p>
+                <ul>
+                    <li><strong>Models:</strong> Database entities and relationships</li>
+                    <li><strong>Services:</strong> Business logic and validation</li>
+                    <li><strong>Routes:</strong> HTTP request handling</li>
+                </ul>
+                
+                <h6 class="mt-3">Business Logic in Services</h6>
+                <p>
+                    All business logic resides in the service layer. Routes are kept thin and only handle
+                    HTTP concerns, delegating all business operations to services.
+                </p>
+                
+                <h6 class="mt-3">Historical Data Preservation</h6>
+                <p>
+                    The system uses soft delete patterns to ensure historical data is never permanently removed.
+                    Records are marked as deleted rather than removed from the database.
+                </p>
+                
+                <h6 class="mt-3">Date and Period Management</h6>
+                <p>
+                    Dates and periods are core concepts in the system. Built-in mixins provide consistent
+                    handling of time-based entities like seasons and plantings.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
