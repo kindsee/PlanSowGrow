@@ -29,6 +29,12 @@
                     </p>
                     {% endif %}
                 </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('pests.edit_pest', pest_id=pest.id) }}" 
+                       class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}

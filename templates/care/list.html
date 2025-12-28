@@ -24,6 +24,12 @@
                     <p class="card-text">{{ care.description }}</p>
                     {% endif %}
                 </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('care.edit_care_action', care_id=care.id) }}" 
+                       class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}

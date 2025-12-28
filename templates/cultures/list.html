@@ -27,7 +27,10 @@
                     <p class="card-text">
                         <strong>Plantas:</strong><br>
                         {% for cp in culture.plants %}
-                            <span class="badge bg-light text-dark me-1">{{ cp.plant.name }}</span>
+                            <a href="{{ url_for('plants.view_plant', plant_id=cp.plant.id) }}" 
+                               class="badge bg-light text-dark text-decoration-none me-1">
+                                {{ cp.plant.name }} ({{ cp.quantity_grown }})
+                            </a>
                         {% endfor %}
                     </p>
                     {% if culture.notes %}

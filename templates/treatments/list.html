@@ -19,6 +19,7 @@
                     <th>Para Plaga</th>
                     <th>Frecuencia</th>
                     <th>Método</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,6 +35,12 @@
                         {% endif %}
                     </td>
                     <td>{{ treatment.application_method or '-' }}</td>
+                    <td>
+                        <a href="{{ url_for('treatments.edit_treatment', treatment_id=treatment.id) }}" 
+                           class="btn btn-sm btn-warning">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

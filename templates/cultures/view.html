@@ -41,7 +41,15 @@
                     <dt class="col-sm-3">Plantas:</dt>
                     <dd class="col-sm-9">
                         {% for cp in culture.plants %}
-                            <span class="badge bg-light text-dark me-1">{{ cp.plant.name }}</span>
+                            <div class="mb-2">
+                                <a href="{{ url_for('plants.view_plant', plant_id=cp.plant.id) }}" 
+                                   class="badge bg-light text-dark text-decoration-none">
+                                    {{ cp.plant.name }}
+                                </a>
+                                <small class="text-muted">
+                                    - Sembrado: {{ cp.quantity_planted }}, Crecido: {{ cp.quantity_grown }}
+                                </small>
+                            </div>
                         {% endfor %}
                     </dd>
                     

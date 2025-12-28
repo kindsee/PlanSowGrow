@@ -38,11 +38,42 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Plantas * (selecciona al menos una)</label>
-                        <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
                             {% for plant in plants %}
-                            <div class="form-check">
+                            <div class="card mb-2" id="plant-card-{{ plant.id }}" style="display: none;">
+                                <div class="card-body p-2">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-5">
+                                            <strong>{{ plant.name }}</strong>
+                                            {% if plant.scientific_name %}
+                                            <br><small class="text-muted">{{ plant.scientific_name }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label mb-0 small">Sembrado:</label>
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   name="qty_planted_{{ plant.id }}" 
+                                                   value="1" min="1" placeholder="Cantidad">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label mb-0 small">Crecido:</label>
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   name="qty_grown_{{ plant.id }}" 
+                                                   value="1" min="0" placeholder="Cantidad">
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-sm btn-danger" 
+                                                    onclick="togglePlant({{ plant.id }})">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-check" id="plant-check-{{ plant.id }}">
                                 <input class="form-check-input" type="checkbox" name="plant_ids" 
-                                       value="{{ plant.id }}" id="plant_{{ plant.id }}">
+                                       value="{{ plant.id }}" id="plant_{{ plant.id }}"
+                                       onchange="togglePlant({{ plant.id }})">
                                 <label class="form-check-label" for="plant_{{ plant.id }}">
                                     {{ plant.name }}
                                     {% if plant.scientific_name %}
@@ -52,6 +83,10 @@
                             </div>
                             {% endfor %}
                         </div>
+                        <small class="text-muted">
+                            <strong>Sembrado:</strong> cantidad inicial plantada (semillas, plántulas, etc.)<br>
+                            <strong>Crecido:</strong> plantas que crecieron exitosamente
+                        </small>
                     </div>
                     
                     <div class="mb-3">
@@ -72,4 +107,20 @@
         </div>
     </div>
 </div>
+
+<script>
+function togglePlant(plantId) {
+    const checkbox = document.getElementById('plant_' + plantId);
+    const checkDiv = document.getElementById('plant-check-' + plantId);
+    const card = document.getElementById('plant-card-' + plantId);
+    
+    if (checkbox.checked) {
+        checkDiv.style.display = 'none';
+        card.style.display = 'block';
+    } else {
+        checkDiv.style.display = 'block';
+        card.style.display = 'none';
+    }
+}
+</script>
 {% endblock %}

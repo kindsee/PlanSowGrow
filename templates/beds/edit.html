@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ bed.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('beds.view_bed', bed_id=bed.id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Bancal
+    </a>
+</div>
+
+<h1 class="mb-4"><i class="bi bi-pencil"></i> Editar Bancal</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ bed.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Ubicación</label>
+                        <input type="text" class="form-control" id="location" name="location" 
+                               value="{{ bed.location or '' }}"
+                               placeholder="Ej: Lado norte, junto al muro">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Características del bancal (exposición solar, tipo de suelo, etc.)">{{ bed.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        Todos los bancales tienen dimensiones estándar de 4m x 1m.
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('beds.view_bed', bed_id=bed.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        {% if bed.is_active %}
+        <div class="card mt-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-exclamation-triangle"></i> Zona de Peligro
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Desactivar Bancal</h5>
+                <p class="card-text">
+                    La desactivación no borra el bancal ni su historial. 
+                    Solo lo marca como inactivo y lo oculta de la vista principal.
+                </p>
+                <form method="POST" action="{{ url_for('beds.deactivate_bed_route', bed_id=bed.id) }}"
+                      onsubmit="return confirm('¿Estás seguro de desactivar este bancal? No se perderá ningún dato histórico.');">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-archive"></i> Desactivar Bancal
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ treatment.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('treatments.list_treatments') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Tratamientos
+    </a>
+</div>
+
+<h1 class="mb-4"><i class="bi bi-pencil"></i> Editar Tratamiento</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="pest_id" class="form-label">Plaga *</label>
+                        <select class="form-select" id="pest_id" name="pest_id" required>
+                            <option value="">Selecciona una plaga</option>
+                            {% for pest in pests %}
+                            <option value="{{ pest.id }}" {% if pest.id == treatment.pest_id %}selected{% endif %}>
+                                {{ pest.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre del Tratamiento *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ treatment.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ treatment.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="application_method" class="form-label">Método de Aplicación</label>
+                        <textarea class="form-control" id="application_method" name="application_method" rows="2"
+                                  placeholder="Cómo y cuándo aplicar el tratamiento">{{ treatment.application_method or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                        <input type="number" class="form-control" id="frequency_days" name="frequency_days"
+                               value="{{ treatment.frequency_days or '' }}"
+                               placeholder="Cada cuántos días repetir">
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('treatments.list_treatments') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

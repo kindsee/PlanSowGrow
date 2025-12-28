@@ -145,6 +145,20 @@ def update_plant(plant_id: int, **kwargs) -> Optional[Plant]:
     return plant
 
 
+def update_pest(pest_id: int, **kwargs) -> Optional[Pest]:
+    """Update a pest in the catalog."""
+    pest = db.session.get(Pest, pest_id)
+    if not pest:
+        return None
+    
+    for key, value in kwargs.items():
+        if hasattr(pest, key):
+            setattr(pest, key, value)
+    
+    db.session.commit()
+    return pest
+
+
 # ========== Culture Services ==========
 
 def get_active_cultures() -> List[Culture]:
@@ -175,7 +189,8 @@ def get_cultures_by_bed(bed_id: int, include_inactive: bool = False) -> List[Cul
 
 
 def create_culture(bed_id: int, start_date: date, start_type: str,
-                   plant_ids: List[int], end_date: date = None,
+                   plant_ids: List[int], quantities_planted: List[int] = None,
+                   quantities_grown: List[int] = None, end_date: date = None,
                    notes: str = None) -> Culture:
     """
     Create a new culture (planting).
@@ -185,6 +200,8 @@ def create_culture(bed_id: int, start_date: date, start_type: str,
         start_date: Planting start date
         start_type: One of 'seed', 'seedling', 'transplant'
         plant_ids: List of plant IDs to include in this culture
+        quantities_planted: List of quantities planted for each plant (defaults to 1)
+        quantities_grown: List of quantities that grew for each plant (defaults to 1)
         end_date: Optional end date
         notes: Optional notes
     
@@ -202,8 +219,16 @@ def create_culture(bed_id: int, start_date: date, start_type: str,
     db.session.flush()  # Get culture.id before adding plants
     
     # Add plants to culture
-    for plant_id in plant_ids:
-        culture_plant = CulturePlant(culture_id=culture.id, plant_id=plant_id)
+    for i, plant_id in enumerate(plant_ids):
+        qty_planted = quantities_planted[i] if quantities_planted and i < len(quantities_planted) else 1
+        qty_grown = quantities_grown[i] if quantities_grown and i < len(quantities_grown) else 1
+        
+        culture_plant = CulturePlant(
+            culture_id=culture.id,
+            plant_id=plant_id,
+            quantity_planted=qty_planted,
+            quantity_grown=qty_grown
+        )
         db.session.add(culture_plant)
     
     db.session.commit()
@@ -338,6 +363,20 @@ def create_treatment(pest_id: int, name: str, description: str = None,
     return treatment
 
 
+def update_treatment(treatment_id: int, **kwargs) -> Optional[Treatment]:
+    """Update a treatment."""
+    treatment = db.session.get(Treatment, treatment_id)
+    if not treatment:
+        return None
+    
+    for key, value in kwargs.items():
+        if hasattr(treatment, key):
+            setattr(treatment, key, value)
+    
+    db.session.commit()
+    return treatment
+
+
 # ========== Care Action Services ==========
 
 def get_all_care_actions() -> List[CareAction]:
@@ -364,6 +403,20 @@ def create_care_action(name: str, action_type: str, description: str = None) -> 
     """
     care_action = CareAction(name=name, action_type=action_type, description=description)
     db.session.add(care_action)
+    db.session.commit()
+    return care_action
+
+
+def update_care_action(care_id: int, **kwargs) -> Optional[CareAction]:
+    """Update a care action."""
+    care_action = db.session.get(CareAction, care_id)
+    if not care_action:
+        return None
+    
+    for key, value in kwargs.items():
+        if hasattr(care_action, key):
+            setattr(care_action, key, value)
+    
     db.session.commit()
     return care_action
 

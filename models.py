@@ -89,7 +89,8 @@ class CulturePlant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     culture_id = db.Column(db.Integer, db.ForeignKey('cultures.id'), nullable=False)
     plant_id = db.Column(db.Integer, db.ForeignKey('plants.id'), nullable=False)
-    quantity = db.Column(db.Integer, default=1)
+    quantity_planted = db.Column(db.Integer, default=1)  # Seeds/seedlings used initially
+    quantity_grown = db.Column(db.Integer, default=1)  # Plants that successfully grew
     notes = db.Column(db.Text)
     
     # Relationships

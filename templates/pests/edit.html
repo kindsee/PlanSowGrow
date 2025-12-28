@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ pest.name }} - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('pests.list_pests') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Plagas
+    </a>
+</div>
+
+<h1 class="mb-4"><i class="bi bi-pencil"></i> Editar Plaga</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ pest.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scientific_name" class="form-label">Nombre Científico</label>
+                        <input type="text" class="form-control" id="scientific_name" name="scientific_name"
+                               value="{{ pest.scientific_name or '' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ pest.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="symptoms" class="form-label">Síntomas</label>
+                        <textarea class="form-control" id="symptoms" name="symptoms" rows="3"
+                                  placeholder="Cómo identificar esta plaga">{{ pest.symptoms or '' }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                        <a href="{{ url_for('pests.list_pests') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
