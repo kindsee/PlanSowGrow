@@ -5,7 +5,9 @@ Sistema de gestión de huertos ecológicos para planificar, sembrar y cultivar d
 ## Características
 
 - 📊 Gestión de bancales (raised beds) de 4m x 1m
-- 🌿 Catálogo de plantas con ciclos de crecimiento
+- � **Visualización gráfica** de bancales con Canvas HTML5
+- 🌿 Catálogo de plantas con ciclos de crecimiento e iconos
+- 📍 **Sistema de posicionamiento visual**: filas (superior/central/inferior), espaciado y alineación (izquierda/centro/derecha)
 - 📅 Registro de cultivos activos e históricos
 - 🐛 Gestión de plagas y tratamientos ecológicos
 - ✂️ Acciones de cuidado (poda, entutorado, etc.)
@@ -163,6 +165,20 @@ Define las plantas que cultivarás con sus periodos de crecimiento y cosecha.
 ### 3. Iniciar Cultivos
 
 Asocia plantas a bancales con fechas de inicio y tipo (semilla, plántula, trasplante).
+
+**Distribución visual de plantas:**
+- **Fila**: Selecciona en qué fila del bancal plantar (superior, central, inferior)
+- **Espaciado**: Define la distancia entre plantas (15, 20, 30, 40, 50, 100 cm)
+- **Alineación**: Elige la alineación horizontal (⬅️ izquierda, ↔️ centro, ➡️ derecha)
+
+La alineación permite plantar múltiples tipos de plantas en la misma fila sin que sus iconos se superpongan en la visualización.
+
+**Ejemplo:**
+```
+Bancal 1 - Fila Superior:
+  - 8 tomates, espaciado 30cm, alineación derecha
+  - 6 coles, espaciado 40cm, alineación izquierda
+```
 
 ### 4. Revisar Calendario
 

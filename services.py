@@ -101,14 +101,15 @@ def get_plant_by_id(plant_id: int) -> Optional[Plant]:
     return db.session.get(Plant, plant_id)
 
 
-def create_plant(name: str, scientific_name: str = None, description: str = None,
-                 growth_days: int = None, harvest_period_days: int = None,
-                 notes: str = None) -> Plant:
+def create_plant(name: str, icon: str = '🌱', scientific_name: str = None, 
+                 description: str = None, growth_days: int = None, 
+                 harvest_period_days: int = None, notes: str = None) -> Plant:
     """
     Create a new plant in the catalog.
     
     Args:
         name: Common name of the plant
+        icon: Emoji icon for visual representation (default: 🌱)
         scientific_name: Scientific name
         description: Plant description
         growth_days: Days from planting to harvest
@@ -120,6 +121,7 @@ def create_plant(name: str, scientific_name: str = None, description: str = None
     """
     plant = Plant(
         name=name,
+        icon=icon,
         scientific_name=scientific_name,
         description=description,
         growth_days=growth_days,
@@ -190,7 +192,11 @@ def get_cultures_by_bed(bed_id: int, include_inactive: bool = False) -> List[Cul
 
 def create_culture(bed_id: int, start_date: date, start_type: str,
                    plant_ids: List[int], quantities_planted: List[int] = None,
-                   quantities_grown: List[int] = None, end_date: date = None,
+                   quantities_grown: List[int] = None, 
+                   row_positions: List[str] = None,
+                   spacing_cms: List[int] = None,
+                   alignments: List[str] = None,
+                   end_date: date = None,
                    notes: str = None) -> Culture:
     """
     Create a new culture (planting).
@@ -202,6 +208,9 @@ def create_culture(bed_id: int, start_date: date, start_type: str,
         plant_ids: List of plant IDs to include in this culture
         quantities_planted: List of quantities planted for each plant (defaults to 1)
         quantities_grown: List of quantities that grew for each plant (defaults to 1)
+        row_positions: List of row positions ('superior', 'central', 'inferior')
+        spacing_cms: List of spacing in cm (15, 20, 30, 40, 50, 100)
+        alignments: List of alignments ('left', 'center', 'right')
         end_date: Optional end date
         notes: Optional notes
     
@@ -222,12 +231,18 @@ def create_culture(bed_id: int, start_date: date, start_type: str,
     for i, plant_id in enumerate(plant_ids):
         qty_planted = quantities_planted[i] if quantities_planted and i < len(quantities_planted) else 1
         qty_grown = quantities_grown[i] if quantities_grown and i < len(quantities_grown) else 1
+        row_pos = row_positions[i] if row_positions and i < len(row_positions) else 'central'
+        spacing = spacing_cms[i] if spacing_cms and i < len(spacing_cms) else 30
+        alignment = alignments[i] if alignments and i < len(alignments) else 'center'
         
         culture_plant = CulturePlant(
             culture_id=culture.id,
             plant_id=plant_id,
             quantity_planted=qty_planted,
-            quantity_grown=qty_grown
+            quantity_grown=qty_grown,
+            row_position=row_pos,
+            spacing_cm=spacing,
+            alignment=alignment
         )
         db.session.add(culture_plant)
     

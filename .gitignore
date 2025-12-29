@@ -25,6 +25,17 @@ wheels/
 
 # Environment
 .env
+.env.production
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sql.backup
 
 # IDE
 .vscode/

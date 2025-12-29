@@ -37,6 +37,7 @@ class Plant(db.Model):
     name = db.Column(db.String(100), nullable=False, unique=True)
     scientific_name = db.Column(db.String(200))
     description = db.Column(db.Text)
+    icon = db.Column(db.String(10), default='🌱')  # Emoji icon for visual representation
     growth_days = db.Column(db.Integer)  # Days from planting to harvest
     harvest_period_days = db.Column(db.Integer)  # Duration of harvest period
     notes = db.Column(db.Text)
@@ -93,6 +94,21 @@ class CulturePlant(db.Model):
     plant_id = db.Column(db.Integer, db.ForeignKey('plants.id'), nullable=False)
     quantity_planted = db.Column(db.Integer, default=1)  # Seeds/seedlings used initially
     quantity_grown = db.Column(db.Integer, default=1)  # Plants that successfully grew
+    
+    # Visual plantation layout fields
+    row_position = db.Column(
+        db.Enum('superior', 'central', 'inferior', name='row_position_enum'),
+        default='central'
+    )  # Row in the bed
+    spacing_cm = db.Column(
+        db.Integer,
+        default=30
+    )  # Spacing between plants: 15, 20, 30, 40, 50, 100
+    alignment = db.Column(
+        db.Enum('left', 'center', 'right', name='alignment_enum'),
+        default='center'
+    )  # Horizontal alignment within the row
+    
     notes = db.Column(db.Text)
     
     # Relationships

@@ -58,11 +58,16 @@ def view_bed(bed_id):
         return redirect(url_for('beds.list_beds'))
     
     cultures = services.get_cultures_by_bed(bed_id, include_inactive=True)
+    active_cultures = [c for c in cultures if c.is_active]
     
     # Get events for all cultures in this bed
     bed_events = services.get_bed_events_with_status(bed_id)
     
-    return render_template('beds/view.html', bed=bed, cultures=cultures, events=bed_events)
+    return render_template('beds/view.html', 
+                         bed=bed, 
+                         cultures=cultures, 
+                         active_cultures=active_cultures,
+                         events=bed_events)
 
 
 @beds_bp.route('/<int:bed_id>/edit', methods=['GET', 'POST'])
@@ -111,6 +116,7 @@ def create_plant():
     """Create a new plant in catalog."""
     if request.method == 'POST':
         name = request.form.get('name')
+        icon = request.form.get('icon', '🌱')
         scientific_name = request.form.get('scientific_name')
         description = request.form.get('description')
         growth_days = request.form.get('growth_days', type=int)
@@ -118,7 +124,7 @@ def create_plant():
         notes = request.form.get('notes')
         
         plant = services.create_plant(
-            name, scientific_name, description,
+            name, icon, scientific_name, description,
             growth_days, harvest_period_days, notes
         )
         flash(f'Plant "{plant.name}" created successfully!', 'success')
@@ -149,6 +155,7 @@ def edit_plant(plant_id):
     
     if request.method == 'POST':
         name = request.form.get('name')
+        icon = request.form.get('icon', '🌱')
         scientific_name = request.form.get('scientific_name')
         description = request.form.get('description')
         growth_days = request.form.get('growth_days', type=int)
@@ -156,7 +163,7 @@ def edit_plant(plant_id):
         notes = request.form.get('notes')
         
         services.update_plant(
-            plant_id, name=name, scientific_name=scientific_name,
+            plant_id, name=name, icon=icon, scientific_name=scientific_name,
             description=description, growth_days=growth_days,
             harvest_period_days=harvest_period_days, notes=notes
         )
@@ -252,20 +259,33 @@ def create_culture():
         start_type = request.form.get('start_type')
         plant_ids = request.form.getlist('plant_ids', type=int)
         
-        # Get quantities for each plant
+        # Get quantities and visual layout for each plant
         quantities_planted = []
         quantities_grown = []
+        row_positions = []
+        spacing_cms = []
+        alignments = []
+        
         for plant_id in plant_ids:
             qty_planted = request.form.get(f'qty_planted_{plant_id}', type=int) or 1
             qty_grown = request.form.get(f'qty_grown_{plant_id}', type=int) or 1
+            row_pos = request.form.get(f'row_position_{plant_id}') or 'central'
+            spacing = request.form.get(f'spacing_cm_{plant_id}', type=int) or 30
+            alignment = request.form.get(f'alignment_{plant_id}') or 'center'
+            
             quantities_planted.append(qty_planted)
             quantities_grown.append(qty_grown)
+            row_positions.append(row_pos)
+            spacing_cms.append(spacing)
+            alignments.append(alignment)
         
         notes = request.form.get('notes')
         
         culture = services.create_culture(
             bed_id, start_date, start_type, plant_ids,
-            quantities_planted, quantities_grown, notes=notes
+            quantities_planted, quantities_grown, 
+            row_positions, spacing_cms, alignments,
+            notes=notes
         )
         
         # Generate calendar events for this culture
@@ -311,6 +331,67 @@ def view_culture(culture_id):
                           today=date.today().isoformat())
 
 
+@cultures_bp.route('/<int:culture_id>/edit', methods=['GET', 'POST'])
+def edit_culture(culture_id):
+    """Edit culture information and plant distribution."""
+    culture = services.get_culture_by_id(culture_id)
+    if not culture:
+        flash('Cultivo no encontrado', 'error')
+        return redirect(url_for('cultures.list_cultures'))
+    
+    if request.method == 'POST':
+        # Update basic culture information
+        bed_id = request.form.get('bed_id', type=int)
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        start_type = request.form.get('start_type')
+        notes = request.form.get('notes')
+        
+        if bed_id:
+            culture.bed_id = bed_id
+        if start_date_str:
+            culture.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        if end_date_str:
+            culture.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            culture.is_active = False
+        else:
+            culture.end_date = None
+            culture.is_active = True
+        if start_type:
+            culture.start_type = start_type
+        if notes is not None:
+            culture.notes = notes
+        
+        # Update each culture_plant distribution
+        for cp in culture.plants:
+            qty_planted = request.form.get(f'qty_planted_{cp.id}', type=int)
+            qty_grown = request.form.get(f'qty_grown_{cp.id}', type=int)
+            row_pos = request.form.get(f'row_position_{cp.id}')
+            spacing = request.form.get(f'spacing_cm_{cp.id}', type=int)
+            alignment = request.form.get(f'alignment_{cp.id}')
+            
+            if qty_planted:
+                cp.quantity_planted = qty_planted
+            if qty_grown is not None:
+                cp.quantity_grown = qty_grown
+            if row_pos:
+                cp.row_position = row_pos
+            if spacing:
+                cp.spacing_cm = spacing
+            if alignment:
+                cp.alignment = alignment
+        
+        from extensions import db
+        db.session.commit()
+        
+        flash('Cultivo actualizado correctamente!', 'success')
+        return redirect(url_for('cultures.view_culture', culture_id=culture_id))
+    
+    # GET request - show form
+    beds = services.get_all_beds()
+    return render_template('cultures/edit.html', culture=culture, beds=beds)
+
+
 @cultures_bp.route('/<int:culture_id>/close', methods=['POST'])
 def close_culture(culture_id):
     """Close a culture."""
@@ -322,6 +403,25 @@ def close_culture(culture_id):
     else:
         flash('Culture not found', 'error')
     
+    return redirect(url_for('cultures.list_cultures'))
+
+
+@cultures_bp.route('/<int:culture_id>/delete', methods=['POST'])
+def delete_culture(culture_id):
+    """Delete a culture permanently."""
+    culture = services.get_culture_by_id(culture_id)
+    if not culture:
+        flash('Cultivo no encontrado', 'error')
+        return redirect(url_for('cultures.list_cultures'))
+    
+    bed_name = culture.bed.name
+    
+    # Delete the culture (cascade will handle related records)
+    from extensions import db
+    db.session.delete(culture)
+    db.session.commit()
+    
+    flash(f'Cultivo eliminado del bancal {bed_name}', 'success')
     return redirect(url_for('cultures.list_cultures'))
 
 

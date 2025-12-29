@@ -1,0 +1,66 @@
+/* Bancal Visualizer Styles */
+
+.bancal-canvas {
+    border: 2px solid #8B4513;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: white;
+    display: block;
+    margin: 0 auto;
+}
+
+.bancal-legend {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.bancal-legend ul {
+    margin-bottom: 0;
+}
+
+.bancal-card {
+    transition: transform 0.2s;
+}
+
+.bancal-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bancal-miniature {
+    width: 100%;
+    height: 120px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    background: #f5f5dc;
+}
+
+.spacing-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+.spacing-15 { background-color: #e3f2fd; color: #1976d2; }
+.spacing-20 { background-color: #f3e5f5; color: #7b1fa2; }
+.spacing-30 { background-color: #e8f5e9; color: #388e3c; }
+.spacing-40 { background-color: #fff3e0; color: #f57c00; }
+.spacing-50 { background-color: #fce4ec; color: #c2185b; }
+.spacing-100 { background-color: #f1f8e9; color: #558b2f; }
+
+.row-indicator {
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    color: #424242;
+}
+
+.row-superior { border-left: 3px solid #2196f3; }
+.row-central { border-left: 3px solid #4caf50; }
+.row-inferior { border-left: 3px solid #ff9800; }

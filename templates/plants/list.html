@@ -15,6 +15,7 @@
         <table class="table table-hover">
             <thead>
                 <tr>
+                    <th style="width: 60px;">Icono</th>
                     <th>Nombre</th>
                     <th>Nombre Científico</th>
                     <th>Días de Crecimiento</th>
@@ -25,6 +26,7 @@
             <tbody>
                 {% for plant in plants %}
                 <tr>
+                    <td style="font-size: 2em; text-align: center;">{{ plant.icon }}</td>
                     <td><strong>{{ plant.name }}</strong></td>
                     <td><em>{{ plant.scientific_name or '-' }}</em></td>
                     <td>

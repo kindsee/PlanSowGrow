@@ -3,10 +3,20 @@
 {% block title %}Cultivo - PlanSowGrow{% endblock %}
 
 {% block content %}
-<div class="mb-4">
+<div class="mb-4 d-flex justify-content-between align-items-center">
     <a href="{{ url_for('cultures.list_cultures') }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver a Cultivos
     </a>
+    <div>
+        {% if culture.is_active %}
+        <a href="{{ url_for('cultures.edit_culture', culture_id=culture.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Editar Cultivo
+        </a>
+        {% endif %}
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCultureModal">
+            <i class="bi bi-trash"></i> Eliminar
+        </button>
+    </div>
 </div>
 
 <h1 class="mb-3">
@@ -99,14 +109,27 @@
                     <dt class="col-sm-3">Plantas:</dt>
                     <dd class="col-sm-9">
                         {% for cp in culture.plants %}
-                            <div class="mb-2">
-                                <a href="{{ url_for('plants.view_plant', plant_id=cp.plant.id) }}" 
-                                   class="badge bg-light text-dark text-decoration-none">
-                                    {{ cp.plant.name }}
-                                </a>
-                                <small class="text-muted">
-                                    - Sembrado: {{ cp.quantity_planted }}, Crecido: {{ cp.quantity_grown }}
-                                </small>
+                            <div class="mb-2 p-2 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <span style="font-size: 1.5em;" class="me-2">{{ cp.plant.icon }}</span>
+                                    <div>
+                                        <a href="{{ url_for('plants.view_plant', plant_id=cp.plant.id) }}" 
+                                           class="text-decoration-none fw-bold">
+                                            {{ cp.plant.name }}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">
+                                            Sembrado: {{ cp.quantity_planted }}, Crecido: {{ cp.quantity_grown }}
+                                            | Fila: <span class="badge badge-sm bg-secondary">{{ cp.row_position }}</span>
+                                            | Espaciado: <span class="badge badge-sm bg-info">{{ cp.spacing_cm }} cm</span>
+                                            | Alineación: <span class="badge badge-sm bg-primary">
+                                                {% if cp.alignment == 'left' %}⬅️ Izquierda
+                                                {% elif cp.alignment == 'right' %}➡️ Derecha
+                                                {% else %}↔️ Centro{% endif %}
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
                         {% endfor %}
                     </dd>
@@ -351,4 +374,37 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteCultureModal" tabindex="-1" aria-labelledby="deleteCultureModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteCultureModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>¿Estás seguro de que deseas eliminar este cultivo?</strong></p>
+                <p class="text-danger">Esta acción no se puede deshacer. Se eliminarán:</p>
+                <ul>
+                    <li>La información del cultivo</li>
+                    <li>Las plantas asociadas</li>
+                    <li>Los tratamientos y cuidados programados</li>
+                    <li>Los eventos del calendario</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('cultures.delete_culture', culture_id=culture.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

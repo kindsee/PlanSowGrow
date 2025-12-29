@@ -55,11 +55,38 @@
                                                    name="qty_planted_{{ plant.id }}" 
                                                    value="1" min="1" placeholder="Cantidad">
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <label class="form-label mb-0 small">Crecido:</label>
                                             <input type="number" class="form-control form-control-sm" 
                                                    name="qty_grown_{{ plant.id }}" 
                                                    value="1" min="0" placeholder="Cantidad">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-0 small">Fila:</label>
+                                            <select class="form-select form-select-sm" name="row_position_{{ plant.id }}">
+                                                <option value="superior">Superior</option>
+                                                <option value="central" selected>Central</option>
+                                                <option value="inferior">Inferior</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-0 small">Espacio (cm):</label>
+                                            <select class="form-select form-select-sm" name="spacing_cm_{{ plant.id }}">
+                                                <option value="15">15</option>
+                                                <option value="20">20</option>
+                                                <option value="30" selected>30</option>
+                                                <option value="40">40</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-0 small">Alineación:</label>
+                                            <select class="form-select form-select-sm" name="alignment_{{ plant.id }}">
+                                                <option value="left">⬅️ Izquierda</option>
+                                                <option value="center" selected>↔️ Centro</option>
+                                                <option value="right">➡️ Derecha</option>
+                                            </select>
                                         </div>
                                         <div class="col-md-1">
                                             <button type="button" class="btn btn-sm btn-danger" 
@@ -84,8 +111,10 @@
                             {% endfor %}
                         </div>
                         <small class="text-muted">
-                            <strong>Sembrado:</strong> cantidad inicial plantada (semillas, plántulas, etc.)<br>
-                            <strong>Crecido:</strong> plantas que crecieron exitosamente
+                            <strong>Sembrado:</strong> cantidad inicial plantada<br>
+                            <strong>Crecido:</strong> plantas que crecieron exitosamente<br>
+                            <strong>Fila:</strong> ubicación en el bancal (superior/central/inferior)<br>
+                            <strong>Espacio:</strong> separación entre plantas en cm
                         </small>
                     </div>
                     

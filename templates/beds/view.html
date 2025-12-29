@@ -2,6 +2,10 @@
 
 {% block title %}{{ bed.name }} - PlanSowGrow{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/bancal-visualizer.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="mb-4 d-flex justify-content-between align-items-center">
     <a href="{{ url_for('beds.list_beds') }}" class="btn btn-sm btn-outline-secondary">
@@ -20,6 +24,19 @@
         <span class="badge bg-secondary">Inactivo</span>
     {% endif %}
 </h1>
+
+<!-- Visual Representation of Bed -->
+{% if active_cultures %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">
+            <i class="bi bi-eye"></i> Visualización del Bancal
+        </h5>
+        <canvas id="bancalCanvas" class="bancal-canvas"></canvas>
+        <div id="bancalLegend" class="mt-3"></div>
+    </div>
+</div>
+{% endif %}
 
 <div class="row mb-4">
     <div class="col-md-8">
@@ -237,4 +254,38 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/bancal-visualizer.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if active_cultures %}
+    // Initialize visualizer
+    const visualizer = new BancalVisualizer('bancalCanvas', {
+        width: 800,
+        height: 200,
+        showGrid: true
+    });
+    
+    // Add cultures data
+    {% for culture in active_cultures %}
+        {% for cp in culture.plants %}
+        visualizer.addCulture({
+            name: '{{ cp.plant.name }}',
+            icon: '{{ cp.plant.icon }}',
+            quantity: {{ cp.quantity_grown }},
+            spacing: {{ cp.spacing_cm }},
+            row: '{{ cp.row_position }}',
+            alignment: '{{ cp.alignment or "center" }}',
+            color: getPlantColor('{{ cp.plant.name }}')
+        });
+        {% endfor %}
+    {% endfor %}
+    
+    // Render the visualization
+    visualizer.render('bancalLegend');
+    {% endif %}
+});
+</script>
 {% endblock %}

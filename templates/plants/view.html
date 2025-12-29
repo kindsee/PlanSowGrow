@@ -12,7 +12,10 @@
     </a>
 </div>
 
-<h1 class="mb-3"><i class="bi bi-flower2"></i> {{ plant.name }}</h1>
+<h1 class="mb-3">
+    <span style="font-size: 1.5em;">{{ plant.icon }}</span> 
+    {{ plant.name }}
+</h1>
 {% if plant.scientific_name %}
 <p class="text-muted"><em>{{ plant.scientific_name }}</em></p>
 {% endif %}
@@ -23,11 +26,16 @@
             <div class="card-body">
                 <h5 class="card-title">Información de la Planta</h5>
                 
-                {% if plant.description %}
-                <p>{{ plant.description }}</p>
-                {% endif %}
-                
                 <dl class="row">
+                    <dt class="col-sm-4">Icono:</dt>
+                    <dd class="col-sm-8">
+                        <span style="font-size: 3em;">{{ plant.icon }}</span>
+                    </dd>
+                    
+                    {% if plant.description %}
+                    <dt class="col-sm-4">Descripción:</dt>
+                    <dd class="col-sm-8">{{ plant.description }}</dd>
+                    {% endif %}
                     {% if plant.growth_days %}
                     <dt class="col-sm-4">Días de Crecimiento:</dt>
                     <dd class="col-sm-8">
