@@ -50,6 +50,64 @@
                 </form>
             </div>
         </div>
+        
+        <!-- Associated Treatments Section -->
+        {% if pest_treatments %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Tratamientos Disponibles</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Tratamientos efectivos contra esta plaga:</p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tratamiento</th>
+                                <th>Efectividad</th>
+                                <th>Frecuencia</th>
+                                <th>Notas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pt in pest_treatments %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('treatments.edit_treatment', treatment_id=pt.treatment.id) }}">
+                                        {{ pt.treatment.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if pt.effectiveness == 'high' %}
+                                        <span class="badge bg-success">Alta</span>
+                                    {% elif pt.effectiveness == 'medium' %}
+                                        <span class="badge bg-warning">Media</span>
+                                    {% elif pt.effectiveness == 'low' %}
+                                        <span class="badge bg-secondary">Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pt.treatment.frequency_days %}
+                                        Cada {{ pt.treatment.frequency_days }} días
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ pt.notes or '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-warning mt-4">
+            <i class="bi bi-exclamation-triangle"></i> 
+            No hay tratamientos asociados a esta plaga aún. 
+            <a href="{{ url_for('treatments.list_treatments') }}">Crear tratamiento</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

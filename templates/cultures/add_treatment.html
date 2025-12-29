@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Añadir Tratamiento - {{ culture.bed.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <h2>Añadir Tratamiento al Cultivo</h2>
+            <p class="text-muted">
+                Cultivo en <strong>{{ culture.bed.name }}</strong> - 
+                Iniciado el {{ culture.start_date.strftime('%d/%m/%Y') }}
+            </p>
+            
+            <!-- Relevant Treatments Section -->
+            {% if relevant_treatments %}
+            <div class="alert alert-info mb-4">
+                <h5 class="alert-heading"><i class="bi bi-lightbulb"></i> Tratamientos Recomendados</h5>
+                <p class="mb-2">Basado en las plagas que pueden afectar a las plantas de este cultivo:</p>
+                <div class="row row-cols-1 row-cols-md-2 g-2">
+                    {% for rt in relevant_treatments %}
+                    <div class="col">
+                        <div class="card h-100 border-primary">
+                            <div class="card-body p-2">
+                                <h6 class="card-title mb-1">{{ rt.treatment.name }}</h6>
+                                <p class="card-text small text-muted mb-1">
+                                    Efectivo contra:
+                                    {% for pest_info in rt.pests %}
+                                    <span class="badge {% if pest_info.effectiveness == 'high' %}bg-success{% elif pest_info.effectiveness == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ pest_info.pest.name }}
+                                    </span>
+                                    {% endfor %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <form method="POST">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="treatment_id" class="form-label">Tratamiento *</label>
+                            <select class="form-select" id="treatment_id" name="treatment_id" required>
+                                <option value="">Selecciona un tratamiento...</option>
+                                {% if relevant_treatments %}
+                                <optgroup label="Tratamientos Recomendados">
+                                    {% for rt in relevant_treatments %}
+                                    <option value="{{ rt.treatment.id }}" 
+                                            data-frequency="{{ rt.treatment.frequency_days }}"
+                                            data-recommended="true">
+                                        ⭐ {{ rt.treatment.name }}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="Otros Tratamientos">
+                                {% endif %}
+                                    {% for treatment in treatments %}
+                                        {% set is_recommended = namespace(found=false) %}
+                                        {% if relevant_treatments %}
+                                            {% for rt in relevant_treatments %}
+                                                {% if rt.treatment.id == treatment.id %}
+                                                    {% set is_recommended.found = true %}
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if not is_recommended.found %}
+                                        <option value="{{ treatment.id }}" 
+                                                data-frequency="{{ treatment.frequency_days }}">
+                                            {{ treatment.name }}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% if relevant_treatments %}
+                                </optgroup>
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">Fecha de inicio del tratamiento *</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   min="{{ culture.start_date.strftime('%Y-%m-%d') }}" required>
+                            <small class="text-muted">
+                                El tratamiento no puede iniciarse antes de la fecha de inicio del cultivo
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                            <input type="number" class="form-control" id="frequency_days" 
+                                   name="frequency_days" min="1" placeholder="Ej: 7 para semanal">
+                            <small class="text-muted">
+                                Dejar vacío para usar la frecuencia por defecto del tratamiento
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Observaciones sobre este tratamiento..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Añadir Tratamiento
+                        </button>
+                        <a href="{{ url_for('cultures.view_culture', culture_id=culture.id) }}" 
+                           class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-fill frequency when treatment is selected
+document.getElementById('treatment_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const frequency = selectedOption.getAttribute('data-frequency');
+    if (frequency) {
+        document.getElementById('frequency_days').value = frequency;
+    }
+});
+</script>
+{% endblock %}

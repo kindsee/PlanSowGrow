@@ -11,16 +11,6 @@
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="pest_id" class="form-label">Plaga *</label>
-                        <select class="form-select" id="pest_id" name="pest_id" required>
-                            <option value="">Selecciona una plaga</option>
-                            {% for pest in pests %}
-                            <option value="{{ pest.id }}">{{ pest.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
                         <label for="name" class="form-label">Nombre del Tratamiento *</label>
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>

@@ -8,7 +8,7 @@ from sqlalchemy import and_, or_
 from extensions import db
 from models import (
     RaisedBed, Plant, Culture, CulturePlant, Pest, PlantPest,
-    Treatment, CareAction, PlantCare, CalendarEvent
+    Treatment, CareAction, PlantCare, CalendarEvent, CultureTreatment, CultureCare, PestTreatment
 )
 
 
@@ -325,10 +325,72 @@ def get_pests_for_plant(plant_id: int) -> List[Dict[str, Any]]:
     """
     plant_pests = db.session.query(PlantPest).filter_by(plant_id=plant_id).all()
     return [{
+        'plant_pest_id': pp.id,
         'pest': pp.pest,
         'severity': pp.severity,
         'notes': pp.notes
     } for pp in plant_pests]
+
+
+def add_pest_to_plant(plant_id: int, pest_id: int, severity: str = 'medium', notes: str = '') -> PlantPest:
+    """
+    Add a pest to a plant or update the relationship if it exists.
+    
+    Args:
+        plant_id: ID of the plant
+        pest_id: ID of the pest
+        severity: Severity level ('low', 'medium', 'high')
+        notes: Optional notes about this pest-plant relationship
+    
+    Returns:
+        The created or updated PlantPest association
+    """
+    # Check if the association already exists
+    plant_pest = db.session.query(PlantPest).filter_by(
+        plant_id=plant_id,
+        pest_id=pest_id
+    ).first()
+    
+    if plant_pest:
+        # Update existing association
+        plant_pest.severity = severity
+        plant_pest.notes = notes
+    else:
+        # Create new association
+        plant_pest = PlantPest(
+            plant_id=plant_id,
+            pest_id=pest_id,
+            severity=severity,
+            notes=notes
+        )
+        db.session.add(plant_pest)
+    
+    db.session.commit()
+    return plant_pest
+
+
+def remove_pest_from_plant(plant_id: int, pest_id: int) -> bool:
+    """
+    Remove a pest association from a plant.
+    
+    Args:
+        plant_id: ID of the plant
+        pest_id: ID of the pest
+    
+    Returns:
+        True if the association was removed, False if it didn't exist
+    """
+    plant_pest = db.session.query(PlantPest).filter_by(
+        plant_id=plant_id,
+        pest_id=pest_id
+    ).first()
+    
+    if plant_pest:
+        db.session.delete(plant_pest)
+        db.session.commit()
+        return True
+    
+    return False
 
 
 # ========== Treatment Services ==========
@@ -348,11 +410,10 @@ def get_treatments_for_pest(pest_id: int) -> List[Treatment]:
     return db.session.query(Treatment).filter_by(pest_id=pest_id).all()
 
 
-def create_treatment(pest_id: int, name: str, description: str = None,
+def create_treatment(name: str, description: str = None,
                      application_method: str = None, frequency_days: int = None) -> Treatment:
     """Create a new treatment."""
     treatment = Treatment(
-        pest_id=pest_id,
         name=name,
         description=description,
         application_method=application_method,
@@ -546,3 +607,803 @@ def mark_event_completed(event_id: int, completed_date: date = None) -> Optional
     event.completed_date = completed_date or date.today()
     db.session.commit()
     return event
+
+
+# ========== Culture Progress Services ==========
+
+def get_culture_progress(culture: Culture) -> Dict[str, Any]:
+    """
+    Calculate growth and harvest progress for a culture.
+    
+    Args:
+        culture: Culture object
+    
+    Returns:
+        Dictionary with:
+        - phase: 'growing' | 'harvesting' | 'ended'
+        - growth_progress: percentage (0-100)
+        - harvest_progress: percentage (0-100) or None
+        - days_since_start: integer
+        - days_to_harvest: integer or None
+        - days_to_harvest_end: integer or None
+    """
+    # Get all plants in the culture
+    culture_plants = culture.plants.all()
+    if not culture_plants:
+        return {
+            'phase': 'ended',
+            'growth_progress': 0,
+            'harvest_progress': None,
+            'days_since_start': 0,
+            'days_to_harvest': None,
+            'days_to_harvest_end': None
+        }
+    
+    # Get maximum growth and harvest periods from plants
+    max_growth_days = max((cp.plant.growth_days for cp in culture_plants if cp.plant.growth_days), default=None)
+    max_harvest_days = max((cp.plant.harvest_period_days for cp in culture_plants if cp.plant.harvest_period_days), default=None)
+    
+    # Calculate days since start
+    today = date.today()
+    days_since_start = (today - culture.start_date).days
+    
+    # Determine phase and calculate progress
+    if max_growth_days is None:
+        # No growth info, can't calculate progress
+        return {
+            'phase': 'growing',
+            'growth_progress': 0,
+            'harvest_progress': None,
+            'days_since_start': days_since_start,
+            'days_to_harvest': None,
+            'days_to_harvest_end': None
+        }
+    
+    if days_since_start < max_growth_days:
+        # Growing phase
+        growth_progress = min(100, int((days_since_start / max_growth_days) * 100))
+        days_to_harvest = max_growth_days - days_since_start
+        
+        return {
+            'phase': 'growing',
+            'growth_progress': growth_progress,
+            'harvest_progress': None,
+            'days_since_start': days_since_start,
+            'days_to_harvest': days_to_harvest,
+            'days_to_harvest_end': days_to_harvest + (max_harvest_days or 0)
+        }
+    
+    elif max_harvest_days and days_since_start < (max_growth_days + max_harvest_days):
+        # Harvesting phase
+        days_in_harvest = days_since_start - max_growth_days
+        harvest_progress = min(100, int((days_in_harvest / max_harvest_days) * 100))
+        days_to_harvest_end = max_growth_days + max_harvest_days - days_since_start
+        
+        return {
+            'phase': 'harvesting',
+            'growth_progress': 100,
+            'harvest_progress': harvest_progress,
+            'days_since_start': days_since_start,
+            'days_to_harvest': 0,
+            'days_to_harvest_end': days_to_harvest_end
+        }
+    
+    else:
+        # Culture should be ended
+        return {
+            'phase': 'ended',
+            'growth_progress': 100,
+            'harvest_progress': 100 if max_harvest_days else None,
+            'days_since_start': days_since_start,
+            'days_to_harvest': 0,
+            'days_to_harvest_end': 0
+        }
+
+
+# ========== Culture Treatment Services ==========
+
+def add_treatment_to_culture(
+    culture_id: int,
+    treatment_id: int,
+    start_date: date,
+    frequency_days: Optional[int] = None,
+    notes: Optional[str] = None
+) -> Optional[CultureTreatment]:
+    """
+    Add a treatment to a culture with custom timing.
+    
+    Args:
+        culture_id: ID of the culture
+        treatment_id: ID of the treatment
+        start_date: When to start applying (must be >= culture.start_date)
+        frequency_days: Override treatment's default frequency
+        notes: Additional notes
+    
+    Returns:
+        Created CultureTreatment or None if validation fails
+    """
+    culture = db.session.get(Culture, culture_id)
+    treatment = db.session.get(Treatment, treatment_id)
+    
+    if not culture or not treatment:
+        return None
+    
+    # Validate start_date is not before culture start
+    if start_date < culture.start_date:
+        return None
+    
+    # Create the association
+    culture_treatment = CultureTreatment(
+        culture_id=culture_id,
+        treatment_id=treatment_id,
+        start_date=start_date,
+        frequency_days=frequency_days if frequency_days else treatment.frequency_days,
+        notes=notes
+    )
+    
+    db.session.add(culture_treatment)
+    db.session.commit()
+    
+    # Generate calendar events for this treatment
+    generate_treatment_events_for_culture(
+        culture_id, 
+        treatment_id, 
+        start_date, 
+        culture_treatment.frequency_days
+    )
+    
+    return culture_treatment
+
+
+def get_culture_treatments(culture_id: int) -> List[CultureTreatment]:
+    """
+    Get all treatments assigned to a culture.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of CultureTreatment objects
+    """
+    return db.session.query(CultureTreatment).filter_by(
+        culture_id=culture_id
+    ).order_by(CultureTreatment.start_date).all()
+
+
+def generate_treatment_events_for_culture(
+    culture_id: int,
+    treatment_id: int,
+    start_date: date,
+    frequency_days: Optional[int]
+) -> List[CalendarEvent]:
+    """
+    Generate calendar events for a treatment in a culture.
+    
+    Args:
+        culture_id: ID of the culture
+        treatment_id: ID of the treatment
+        start_date: First application date
+        frequency_days: How often to repeat (in days)
+    
+    Returns:
+        List of created CalendarEvent objects
+    """
+    culture = db.session.get(Culture, culture_id)
+    if not culture:
+        return []
+    
+    events = []
+    
+    # Determine end date for event generation
+    if culture.end_date:
+        end_date = culture.end_date
+    else:
+        # If culture is still active, generate events for 90 days from start_date
+        end_date = start_date + timedelta(days=90)
+    
+    # Generate first event
+    current_date = start_date
+    event = CalendarEvent(
+        culture_id=culture_id,
+        treatment_id=treatment_id,
+        scheduled_date=current_date
+    )
+    db.session.add(event)
+    events.append(event)
+    
+    # Generate recurring events if frequency is specified
+    if frequency_days and frequency_days > 0:
+        current_date = start_date + timedelta(days=frequency_days)
+        
+        while current_date <= end_date:
+            event = CalendarEvent(
+                culture_id=culture_id,
+                treatment_id=treatment_id,
+                scheduled_date=current_date
+            )
+            db.session.add(event)
+            events.append(event)
+            current_date += timedelta(days=frequency_days)
+    
+    db.session.commit()
+    return events
+
+
+# ========== Culture Care Services ==========
+
+def add_care_to_culture(
+    culture_id: int,
+    care_action_id: int,
+    scheduled_date: date,
+    frequency_days: Optional[int] = None,
+    notes: Optional[str] = None
+) -> Optional[CultureCare]:
+    """
+    Add a care action to a culture with specific scheduling.
+    
+    Args:
+        culture_id: ID of the culture
+        care_action_id: ID of the care action
+        scheduled_date: When to perform (must be >= culture.start_date)
+        frequency_days: How often to repeat (optional)
+        notes: Additional notes
+    
+    Returns:
+        Created CultureCare or None if validation fails
+    """
+    culture = db.session.get(Culture, culture_id)
+    care_action = db.session.get(CareAction, care_action_id)
+    
+    if not culture or not care_action:
+        return None
+    
+    # Validate scheduled_date is not before culture start
+    if scheduled_date < culture.start_date:
+        return None
+    
+    # Create the association
+    culture_care = CultureCare(
+        culture_id=culture_id,
+        care_action_id=care_action_id,
+        scheduled_date=scheduled_date,
+        frequency_days=frequency_days,
+        notes=notes
+    )
+    
+    db.session.add(culture_care)
+    db.session.commit()
+    
+    # Generate calendar events for this care action
+    generate_care_events_for_culture(
+        culture_id, 
+        care_action_id, 
+        scheduled_date, 
+        frequency_days
+    )
+    
+    return culture_care
+
+
+def get_culture_cares(culture_id: int) -> List[CultureCare]:
+    """
+    Get all care actions assigned to a culture.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of CultureCare objects
+    """
+    return db.session.query(CultureCare).filter_by(
+        culture_id=culture_id
+    ).order_by(CultureCare.scheduled_date).all()
+
+
+def generate_care_events_for_culture(
+    culture_id: int,
+    care_action_id: int,
+    scheduled_date: date,
+    frequency_days: Optional[int]
+) -> List[CalendarEvent]:
+    """
+    Generate calendar events for a care action in a culture.
+    
+    Args:
+        culture_id: ID of the culture
+        care_action_id: ID of the care action
+        scheduled_date: First occurrence date
+        frequency_days: How often to repeat (in days)
+    
+    Returns:
+        List of created CalendarEvent objects
+    """
+    culture = db.session.get(Culture, culture_id)
+    if not culture:
+        return []
+    
+    events = []
+    
+    # Determine end date for event generation
+    if culture.end_date:
+        end_date = culture.end_date
+    else:
+        # If culture is still active, generate events for 90 days from scheduled_date
+        end_date = scheduled_date + timedelta(days=90)
+    
+    # Generate first event
+    current_date = scheduled_date
+    event = CalendarEvent(
+        culture_id=culture_id,
+        care_action_id=care_action_id,
+        scheduled_date=current_date
+    )
+    db.session.add(event)
+    events.append(event)
+    
+    # Generate recurring events if frequency is specified
+    if frequency_days and frequency_days > 0:
+        current_date = scheduled_date + timedelta(days=frequency_days)
+        
+        while current_date <= end_date:
+            event = CalendarEvent(
+                culture_id=culture_id,
+                care_action_id=care_action_id,
+                scheduled_date=current_date
+            )
+            db.session.add(event)
+            events.append(event)
+            current_date += timedelta(days=frequency_days)
+    
+    db.session.commit()
+    return events
+
+
+def get_culture_events_with_status(culture_id: int) -> Dict[str, List[Dict]]:
+    """
+    Get all events (treatments and cares) for a culture grouped by status.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        Dictionary with 'pending' and 'completed' lists
+    """
+    events = db.session.query(CalendarEvent).filter_by(
+        culture_id=culture_id
+    ).order_by(CalendarEvent.scheduled_date).all()
+    
+    pending = []
+    completed = []
+    
+    for event in events:
+        event_data = {
+            'id': event.id,
+            'scheduled_date': event.scheduled_date,
+            'completed': event.completed,
+            'completed_date': event.completed_date,
+            'notes': event.notes
+        }
+        
+        if event.treatment_id:
+            event_data['type'] = 'treatment'
+            event_data['treatment'] = event.treatment
+        elif event.care_action_id:
+            event_data['type'] = 'care'
+            event_data['care_action'] = event.care_action
+        
+        if event.completed:
+            completed.append(event_data)
+        else:
+            pending.append(event_data)
+    
+    return {
+        'pending': pending,
+        'completed': completed
+    }
+
+
+def get_bed_events_with_status(bed_id: int) -> Dict[str, List[Dict]]:
+    """
+    Get all events for all cultures in a bed grouped by status.
+    
+    Args:
+        bed_id: ID of the raised bed
+    
+    Returns:
+        Dictionary with 'pending' and 'completed' lists
+    """
+    # Get all cultures in the bed
+    cultures = db.session.query(Culture).filter_by(bed_id=bed_id).all()
+    culture_ids = [c.id for c in cultures]
+    
+    if not culture_ids:
+        return {'pending': [], 'completed': []}
+    
+    # Get all events for these cultures
+    events = db.session.query(CalendarEvent).filter(
+        CalendarEvent.culture_id.in_(culture_ids)
+    ).order_by(CalendarEvent.scheduled_date).all()
+    
+    pending = []
+    completed = []
+    
+    for event in events:
+        event_data = {
+            'id': event.id,
+            'scheduled_date': event.scheduled_date,
+            'completed': event.completed,
+            'completed_date': event.completed_date,
+            'notes': event.notes,
+            'culture': event.culture
+        }
+        
+        if event.treatment_id:
+            event_data['type'] = 'treatment'
+            event_data['treatment'] = event.treatment
+        elif event.care_action_id:
+            event_data['type'] = 'care'
+            event_data['care_action'] = event.care_action
+        
+        if event.completed:
+            completed.append(event_data)
+        else:
+            pending.append(event_data)
+    
+    return {
+        'pending': pending,
+        'completed': completed
+    }
+
+
+# ========== Pest-Treatment Association Services ==========
+
+def add_pest_to_treatment(treatment_id: int, pest_id: int, effectiveness: str = 'high', notes: str = None) -> PestTreatment:
+    """
+    Associate a pest with a treatment.
+    
+    Args:
+        treatment_id: ID of the treatment
+        pest_id: ID of the pest
+        effectiveness: Effectiveness level ('high', 'medium', 'low')
+        notes: Optional notes about this association
+    
+    Returns:
+        Created PestTreatment association
+    """
+    # Check if association already exists
+    existing = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id,
+        pest_id=pest_id
+    ).first()
+    
+    if existing:
+        # Update existing
+        existing.effectiveness = effectiveness
+        if notes:
+            existing.notes = notes
+        db.session.commit()
+        return existing
+    
+    # Create new association
+    pest_treatment = PestTreatment(
+        treatment_id=treatment_id,
+        pest_id=pest_id,
+        effectiveness=effectiveness,
+        notes=notes
+    )
+    db.session.add(pest_treatment)
+    db.session.commit()
+    return pest_treatment
+
+
+def remove_pest_from_treatment(treatment_id: int, pest_id: int) -> bool:
+    """
+    Remove pest-treatment association.
+    
+    Returns:
+        True if removed, False if not found
+    """
+    pest_treatment = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id,
+        pest_id=pest_id
+    ).first()
+    
+    if pest_treatment:
+        db.session.delete(pest_treatment)
+        db.session.commit()
+        return True
+    return False
+
+
+def get_pests_for_treatment(treatment_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all pests associated with a treatment.
+    
+    Returns:
+        List of dicts with pest info and effectiveness
+    """
+    pest_treatments = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id
+    ).all()
+    
+    return [{
+        'pest': pt.pest,
+        'effectiveness': pt.effectiveness,
+        'notes': pt.notes,
+        'pest_treatment_id': pt.id
+    } for pt in pest_treatments]
+
+
+def get_treatments_for_pest(pest_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all treatments effective against a pest.
+    
+    Returns:
+        List of dicts with treatment info and effectiveness
+    """
+    pest_treatments = db.session.query(PestTreatment).filter_by(
+        pest_id=pest_id
+    ).all()
+    
+    return [{
+        'treatment': pt.treatment,
+        'effectiveness': pt.effectiveness,
+        'notes': pt.notes,
+        'pest_treatment_id': pt.id
+    } for pt in pest_treatments]
+
+
+def get_culture_potential_pests(culture_id: int) -> List[Pest]:
+    """
+    Get all pests that could affect a culture based on its plants.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of Pest objects that affect any plant in the culture
+    """
+    # Get all plants in this culture
+    culture_plants = db.session.query(CulturePlant).filter_by(
+        culture_id=culture_id
+    ).all()
+    
+    plant_ids = [cp.plant_id for cp in culture_plants]
+    
+    if not plant_ids:
+        return []
+    
+    # Get all pests associated with these plants
+    plant_pests = db.session.query(PlantPest).filter(
+        PlantPest.plant_id.in_(plant_ids)
+    ).all()
+    
+    # Extract unique pests
+    pest_ids = list(set([pp.pest_id for pp in plant_pests]))
+    
+    if not pest_ids:
+        return []
+    
+    pests = db.session.query(Pest).filter(Pest.id.in_(pest_ids)).all()
+    return pests
+
+
+def get_relevant_treatments_for_culture(culture_id: int) -> List[Dict[str, Any]]:
+    """
+    Get treatments relevant for a culture based on pests affecting its plants.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of dicts with treatment and related pest info
+    """
+    # Get pests for this culture
+    pests = get_culture_potential_pests(culture_id)
+    
+    if not pests:
+        return []
+    
+    pest_ids = [p.id for p in pests]
+    
+    # Get all treatment associations for these pests
+    pest_treatments = db.session.query(PestTreatment).filter(
+        PestTreatment.pest_id.in_(pest_ids)
+    ).order_by(
+        PestTreatment.effectiveness.desc(),
+        PestTreatment.treatment_id
+    ).all()
+    
+    # Group by treatment to avoid duplicates
+    treatments_dict = {}
+    for pt in pest_treatments:
+        treatment_id = pt.treatment_id
+        if treatment_id not in treatments_dict:
+            treatments_dict[treatment_id] = {
+                'treatment': pt.treatment,
+                'pests': [],
+                'max_effectiveness': pt.effectiveness
+            }
+        treatments_dict[treatment_id]['pests'].append({
+            'pest': pt.pest,
+            'effectiveness': pt.effectiveness
+        })
+    
+    return list(treatments_dict.values())
+
+
+# ========== Pest-Treatment Association Services ==========
+
+def add_pest_to_treatment(treatment_id: int, pest_id: int, effectiveness: str = 'high', notes: str = None) -> PestTreatment:
+    """
+    Associate a pest with a treatment.
+    
+    Args:
+        treatment_id: ID of the treatment
+        pest_id: ID of the pest
+        effectiveness: Effectiveness level ('high', 'medium', 'low')
+        notes: Optional notes about this association
+    
+    Returns:
+        Created PestTreatment association
+    """
+    # Check if association already exists
+    existing = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id,
+        pest_id=pest_id
+    ).first()
+    
+    if existing:
+        # Update existing
+        existing.effectiveness = effectiveness
+        if notes:
+            existing.notes = notes
+        db.session.commit()
+        return existing
+    
+    # Create new association
+    pest_treatment = PestTreatment(
+        treatment_id=treatment_id,
+        pest_id=pest_id,
+        effectiveness=effectiveness,
+        notes=notes
+    )
+    db.session.add(pest_treatment)
+    db.session.commit()
+    return pest_treatment
+
+
+def remove_pest_from_treatment(treatment_id: int, pest_id: int) -> bool:
+    """
+    Remove pest-treatment association.
+    
+    Returns:
+        True if removed, False if not found
+    """
+    pest_treatment = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id,
+        pest_id=pest_id
+    ).first()
+    
+    if pest_treatment:
+        db.session.delete(pest_treatment)
+        db.session.commit()
+        return True
+    return False
+
+
+def get_pests_for_treatment(treatment_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all pests associated with a treatment.
+    
+    Returns:
+        List of dicts with pest info and effectiveness
+    """
+    pest_treatments = db.session.query(PestTreatment).filter_by(
+        treatment_id=treatment_id
+    ).all()
+    
+    return [{
+        'pest': pt.pest,
+        'effectiveness': pt.effectiveness,
+        'notes': pt.notes,
+        'pest_treatment_id': pt.id
+    } for pt in pest_treatments]
+
+
+def get_treatments_for_pest(pest_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all treatments effective against a pest.
+    
+    Returns:
+        List of dicts with treatment info and effectiveness
+    """
+    pest_treatments = db.session.query(PestTreatment).filter_by(
+        pest_id=pest_id
+    ).all()
+    
+    return [{
+        'treatment': pt.treatment,
+        'effectiveness': pt.effectiveness,
+        'notes': pt.notes,
+        'pest_treatment_id': pt.id
+    } for pt in pest_treatments]
+
+
+def get_culture_potential_pests(culture_id: int) -> List[Pest]:
+    """
+    Get all pests that could affect a culture based on its plants.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of Pest objects that affect any plant in the culture
+    """
+    # Get all plants in this culture
+    culture_plants = db.session.query(CulturePlant).filter_by(
+        culture_id=culture_id
+    ).all()
+    
+    plant_ids = [cp.plant_id for cp in culture_plants]
+    
+    if not plant_ids:
+        return []
+    
+    # Get all pests associated with these plants
+    plant_pests = db.session.query(PlantPest).filter(
+        PlantPest.plant_id.in_(plant_ids)
+    ).all()
+    
+    # Extract unique pests
+    pest_ids = list(set([pp.pest_id for pp in plant_pests]))
+    
+    if not pest_ids:
+        return []
+    
+    pests = db.session.query(Pest).filter(Pest.id.in_(pest_ids)).all()
+    return pests
+
+
+def get_relevant_treatments_for_culture(culture_id: int) -> List[Dict[str, Any]]:
+    """
+    Get treatments relevant for a culture based on pests affecting its plants.
+    
+    Args:
+        culture_id: ID of the culture
+    
+    Returns:
+        List of dicts with treatment and related pest info
+    """
+    # Get pests for this culture
+    pests = get_culture_potential_pests(culture_id)
+    
+    if not pests:
+        return []
+    
+    pest_ids = [p.id for p in pests]
+    
+    # Get all treatment associations for these pests
+    pest_treatments = db.session.query(PestTreatment).filter(
+        PestTreatment.pest_id.in_(pest_ids)
+    ).order_by(
+        PestTreatment.effectiveness.desc(),
+        PestTreatment.treatment_id
+    ).all()
+    
+    # Group by treatment to avoid duplicates
+    treatments_dict = {}
+    for pt in pest_treatments:
+        treatment_id = pt.treatment_id
+        if treatment_id not in treatments_dict:
+            treatments_dict[treatment_id] = {
+                'treatment': pt.treatment,
+                'pests': [],
+                'max_effectiveness': pt.effectiveness
+            }
+        treatments_dict[treatment_id]['pests'].append({
+            'pest': pt.pest,
+            'effectiveness': pt.effectiveness
+        })
+    
+    return list(treatments_dict.values())

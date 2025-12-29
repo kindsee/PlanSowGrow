@@ -16,7 +16,7 @@
             <thead>
                 <tr>
                     <th>Tratamiento</th>
-                    <th>Para Plaga</th>
+                    <th>Descripción</th>
                     <th>Frecuencia</th>
                     <th>Método</th>
                     <th>Acciones</th>
@@ -26,7 +26,13 @@
                 {% for treatment in treatments %}
                 <tr>
                     <td><strong>{{ treatment.name }}</strong></td>
-                    <td>{{ treatment.pest.name }}</td>
+                    <td>
+                        {% if treatment.description %}
+                            {{ treatment.description[:80] }}{% if treatment.description|length > 80 %}...{% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         {% if treatment.frequency_days %}
                             Cada {{ treatment.frequency_days }} días
@@ -34,7 +40,13 @@
                             -
                         {% endif %}
                     </td>
-                    <td>{{ treatment.application_method or '-' }}</td>
+                    <td>
+                        {% if treatment.application_method %}
+                            {{ treatment.application_method[:40] }}{% if treatment.application_method|length > 40 %}...{% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         <a href="{{ url_for('treatments.edit_treatment', treatment_id=treatment.id) }}" 
                            class="btn btn-sm btn-warning">

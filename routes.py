@@ -58,7 +58,11 @@ def view_bed(bed_id):
         return redirect(url_for('beds.list_beds'))
     
     cultures = services.get_cultures_by_bed(bed_id, include_inactive=True)
-    return render_template('beds/view.html', bed=bed, cultures=cultures)
+    
+    # Get events for all cultures in this bed
+    bed_events = services.get_bed_events_with_status(bed_id)
+    
+    return render_template('beds/view.html', bed=bed, cultures=cultures, events=bed_events)
 
 
 @beds_bp.route('/<int:bed_id>/edit', methods=['GET', 'POST'])
@@ -159,7 +163,63 @@ def edit_plant(plant_id):
         flash(f'Planta "{name}" actualizada correctamente!', 'success')
         return redirect(url_for('plants.view_plant', plant_id=plant_id))
     
-    return render_template('plants/edit.html', plant=plant)
+    # Load associated pests and all available pests
+    plant_pests = services.get_pests_for_plant(plant_id)
+    all_pests = services.get_all_pests()
+    
+    return render_template('plants/edit.html', plant=plant, plant_pests=plant_pests, all_pests=all_pests)
+
+
+@plants_bp.route('/<int:plant_id>/add_pest', methods=['POST'])
+def add_pest(plant_id):
+    """Add a pest association to a plant."""
+    plant = services.get_plant_by_id(plant_id)
+    if not plant:
+        flash('Planta no encontrada', 'error')
+        return redirect(url_for('plants.list_plants'))
+    
+    pest_id = request.form.get('pest_id', type=int)
+    severity = request.form.get('severity', 'medium')
+    notes = request.form.get('notes', '')
+    
+    if not pest_id:
+        flash('Debes seleccionar una plaga', 'error')
+        return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+    
+    try:
+        services.add_pest_to_plant(plant_id, pest_id, severity, notes)
+        pest = services.get_pest_by_id(pest_id)
+        flash(f'Plaga "{pest.name}" asociada correctamente', 'success')
+    except Exception as e:
+        flash(f'Error al asociar la plaga: {str(e)}', 'error')
+    
+    return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+
+
+@plants_bp.route('/<int:plant_id>/remove_pest', methods=['POST'])
+def remove_pest(plant_id):
+    """Remove a pest association from a plant."""
+    plant = services.get_plant_by_id(plant_id)
+    if not plant:
+        flash('Planta no encontrada', 'error')
+        return redirect(url_for('plants.list_plants'))
+    
+    pest_id = request.form.get('pest_id', type=int)
+    
+    if not pest_id:
+        flash('Plaga no especificada', 'error')
+        return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+    
+    try:
+        if services.remove_pest_from_plant(plant_id, pest_id):
+            pest = services.get_pest_by_id(pest_id)
+            flash(f'Plaga "{pest.name}" desasociada correctamente', 'success')
+        else:
+            flash('La asociación no existe', 'warning')
+    except Exception as e:
+        flash(f'Error al eliminar la asociación: {str(e)}', 'error')
+    
+    return redirect(url_for('plants.edit_plant', plant_id=plant_id))
 
 
 # ========== Culture Routes ==========
@@ -167,8 +227,20 @@ def edit_plant(plant_id):
 @cultures_bp.route('/list')
 def list_cultures():
     """List all active cultures."""
-    cultures = services.get_active_cultures()
-    return render_template('cultures/list.html', cultures=cultures)
+    active_cultures = services.get_active_cultures()
+    
+    # Add progress info to each culture
+    cultures_with_progress = []
+    for culture in active_cultures:
+        progress = services.get_culture_progress(culture)
+        cultures_with_progress.append({
+            'culture': culture,
+            'progress': progress
+        })
+    
+    return render_template('cultures/list.html', 
+                         cultures=cultures_with_progress,
+                         today=date.today().isoformat())
 
 
 @cultures_bp.route('/create', methods=['GET', 'POST'])
@@ -215,7 +287,28 @@ def view_culture(culture_id):
         flash('Culture not found', 'error')
         return redirect(url_for('cultures.list_cultures'))
     
-    return render_template('cultures/view.html', culture=culture)
+    # Get progress information
+    progress = services.get_culture_progress(culture)
+    
+    # Get assigned treatments and cares
+    culture_treatments = services.get_culture_treatments(culture_id)
+    culture_cares = services.get_culture_cares(culture_id)
+    
+    # Get events with status (pending/completed)
+    events = services.get_culture_events_with_status(culture_id)
+    
+    # Get potential pests and relevant treatments
+    potential_pests = services.get_culture_potential_pests(culture_id)
+    relevant_treatments = services.get_relevant_treatments_for_culture(culture_id)
+    
+    return render_template('cultures/view.html', culture=culture, 
+                          progress=progress, 
+                          treatments=culture_treatments,
+                          cares=culture_cares,
+                          events=events,
+                          potential_pests=potential_pests,
+                          relevant_treatments=relevant_treatments,
+                          today=date.today().isoformat())
 
 
 @cultures_bp.route('/<int:culture_id>/close', methods=['POST'])
@@ -230,6 +323,86 @@ def close_culture(culture_id):
         flash('Culture not found', 'error')
     
     return redirect(url_for('cultures.list_cultures'))
+
+
+@cultures_bp.route('/<int:culture_id>/add-treatment', methods=['GET', 'POST'])
+def add_treatment_to_culture(culture_id):
+    """Add a treatment to a culture."""
+    culture = services.get_culture_by_id(culture_id)
+    
+    if not culture:
+        flash('Culture not found', 'error')
+        return redirect(url_for('cultures.list_cultures'))
+    
+    if request.method == 'POST':
+        treatment_id = int(request.form.get('treatment_id'))
+        start_date_str = request.form.get('start_date')
+        frequency_days = request.form.get('frequency_days')
+        notes = request.form.get('notes')
+        
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        frequency = int(frequency_days) if frequency_days else None
+        
+        culture_treatment = services.add_treatment_to_culture(
+            culture_id=culture_id,
+            treatment_id=treatment_id,
+            start_date=start_date,
+            frequency_days=frequency,
+            notes=notes
+        )
+        
+        if culture_treatment:
+            flash('Treatment added successfully!', 'success')
+            return redirect(url_for('cultures.view_culture', culture_id=culture_id))
+        else:
+            flash('Error adding treatment. Check that start date is not before culture start date.', 'error')
+    
+    # GET request - show form
+    treatments = services.get_all_treatments()
+    relevant_treatments = services.get_relevant_treatments_for_culture(culture_id)
+    return render_template('cultures/add_treatment.html', 
+                         culture=culture,
+                         treatments=treatments,
+                         relevant_treatments=relevant_treatments)
+
+
+@cultures_bp.route('/<int:culture_id>/add-care', methods=['GET', 'POST'])
+def add_care_to_culture(culture_id):
+    """Add a care action to a culture."""
+    culture = services.get_culture_by_id(culture_id)
+    
+    if not culture:
+        flash('Culture not found', 'error')
+        return redirect(url_for('cultures.list_cultures'))
+    
+    if request.method == 'POST':
+        care_action_id = int(request.form.get('care_action_id'))
+        scheduled_date_str = request.form.get('scheduled_date')
+        frequency_days = request.form.get('frequency_days')
+        notes = request.form.get('notes')
+        
+        scheduled_date = datetime.strptime(scheduled_date_str, '%Y-%m-%d').date()
+        frequency = int(frequency_days) if frequency_days else None
+        
+        culture_care = services.add_care_to_culture(
+            culture_id=culture_id,
+            care_action_id=care_action_id,
+            scheduled_date=scheduled_date,
+            frequency_days=frequency,
+            notes=notes
+        )
+        
+        if culture_care:
+            flash('Care action added successfully!', 'success')
+            return redirect(url_for('cultures.view_culture', culture_id=culture_id))
+        else:
+            flash('Error adding care action. Check that scheduled date is not before culture start date.', 'error')
+    
+    # GET request - show form
+    care_actions = services.get_all_care_actions()
+    return render_template('cultures/add_care.html', 
+                         culture=culture,
+                         care_actions=care_actions)
 
 
 # ========== Calendar Routes ==========
@@ -304,9 +477,13 @@ def edit_pest(pest_id):
         services.update_pest(pest_id, name=name, scientific_name=scientific_name,
                            description=description, symptoms=symptoms)
         flash(f'Plaga "{name}" actualizada correctamente!', 'success')
-        return redirect(url_for('pests.list_pests'))
+        return redirect(url_for('pests.edit_pest', pest_id=pest_id))
     
-    return render_template('pests/edit.html', pest=pest)
+    # Get treatments for this pest
+    pest_treatments = services.get_treatments_for_pest(pest_id)
+    return render_template('pests/edit.html', pest=pest, pest_treatments=pest_treatments)
+    pest_treatments = services.get_treatments_for_pest(pest_id)
+    return render_template('pests/edit.html', pest=pest, pest_treatments=pest_treatments)
 
 
 # ========== Treatment Routes ==========
@@ -322,17 +499,16 @@ def list_treatments():
 def create_treatment():
     """Create a new treatment."""
     if request.method == 'POST':
-        pest_id = request.form.get('pest_id', type=int)
         name = request.form.get('name')
         description = request.form.get('description')
         application_method = request.form.get('application_method')
         frequency_days = request.form.get('frequency_days', type=int)
         
         treatment = services.create_treatment(
-            pest_id, name, description, application_method, frequency_days
+            name, description, application_method, frequency_days
         )
-        flash(f'Treatment "{treatment.name}" created successfully!', 'success')
-        return redirect(url_for('treatments.list_treatments'))
+        flash(f'Tratamiento "{treatment.name}" creado correctamente! Ahora puedes asociarle plagas.', 'success')
+        return redirect(url_for('treatments.edit_treatment', treatment_id=treatment.id))
     
     pests = services.get_all_pests()
     return render_template('treatments/create.html', pests=pests)
@@ -347,20 +523,46 @@ def edit_treatment(treatment_id):
         return redirect(url_for('treatments.list_treatments'))
     
     if request.method == 'POST':
-        pest_id = request.form.get('pest_id', type=int)
         name = request.form.get('name')
         description = request.form.get('description')
         application_method = request.form.get('application_method')
         frequency_days = request.form.get('frequency_days', type=int)
         
-        services.update_treatment(treatment_id, pest_id=pest_id, name=name,
+        services.update_treatment(treatment_id, name=name,
                                 description=description, application_method=application_method,
                                 frequency_days=frequency_days)
         flash(f'Tratamiento "{name}" actualizado correctamente!', 'success')
+        return redirect(url_for('treatments.edit_treatment', treatment_id=treatment_id))
+    
+    all_pests = services.get_all_pests()
+    treatment_pests = services.get_pests_for_treatment(treatment_id)
+    return render_template('treatments/edit.html', treatment=treatment, 
+                          all_pests=all_pests, treatment_pests=treatment_pests)
+
+
+@treatments_bp.route('/<int:treatment_id>/add_pest', methods=['POST'])
+def add_pest(treatment_id):
+    """Add a pest to a treatment."""
+    treatment = services.get_treatment_by_id(treatment_id)
+    if not treatment:
+        flash('Tratamiento no encontrado', 'error')
         return redirect(url_for('treatments.list_treatments'))
     
-    pests = services.get_all_pests()
-    return render_template('treatments/edit.html', treatment=treatment, pests=pests)
+    pest_id = request.form.get('pest_id', type=int)
+    effectiveness = request.form.get('effectiveness', 'high')
+    notes = request.form.get('notes')
+    
+    services.add_pest_to_treatment(treatment_id, pest_id, effectiveness, notes)
+    flash('Plaga añadida al tratamiento correctamente!', 'success')
+    return redirect(url_for('treatments.edit_treatment', treatment_id=treatment_id))
+
+
+@treatments_bp.route('/<int:treatment_id>/remove_pest/<int:pest_id>', methods=['POST'])
+def remove_pest(treatment_id, pest_id):
+    """Remove a pest from a treatment."""
+    services.remove_pest_from_treatment(treatment_id, pest_id)
+    flash('Plaga eliminada del tratamiento', 'success')
+    return redirect(url_for('treatments.edit_treatment', treatment_id=treatment_id))
 
 
 @care_bp.route('/<int:care_id>/edit', methods=['GET', 'POST'])

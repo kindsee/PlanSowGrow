@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Añadir Cuidado - PlanSowGrow{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('cultures.view_culture', culture_id=culture.id) }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Cultivo
+    </a>
+</div>
+
+<h1 class="mb-3">
+    <i class="bi bi-heart"></i> Añadir Cuidado a Cultivo
+</h1>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Cultivo en {{ culture.bed.name }}</h5>
+                <p class="text-muted">
+                    <strong>Inicio:</strong> {{ culture.start_date.strftime('%d/%m/%Y') }}<br>
+                    <strong>Plantas:</strong> 
+                    {% for cp in culture.plants %}
+                        {{ cp.plant.name }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+                
+                <hr>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="care_action_id" class="form-label">Cuidado <span class="text-danger">*</span></label>
+                        <select class="form-select" id="care_action_id" name="care_action_id" required onchange="updateFrequency()">
+                            <option value="">Seleccionar cuidado...</option>
+                            {% for care in care_actions %}
+                                <option value="{{ care.id }}" data-type="{{ care.action_type }}">
+                                    {{ care.name }} ({{ care.action_type }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Selecciona el cuidado que deseas aplicar a este cultivo
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduled_date" class="form-label">Fecha de Aplicación <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="scheduled_date" name="scheduled_date" 
+                               min="{{ culture.start_date.isoformat() }}" required>
+                        <div class="form-text">
+                            La fecha debe ser igual o posterior a la fecha de inicio del cultivo ({{ culture.start_date.strftime('%d/%m/%Y') }})
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                        <input type="number" class="form-control" id="frequency_days" name="frequency_days" min="1">
+                        <div class="form-text">
+                            Si deseas que este cuidado se repita, indica cada cuántos días. Deja vacío para una sola aplicación.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        <div class="form-text">
+                            Añade observaciones sobre este cuidado específico
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Añadir Cuidado
+                    </button>
+                    <a href="{{ url_for('cultures.view_culture', culture_id=culture.id) }}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">💡 Ayuda</h6>
+                <p class="small">
+                    <strong>Fecha de Aplicación:</strong> Programa cuándo realizar este cuidado.<br><br>
+                    <strong>Frecuencia:</strong> Si el cuidado debe repetirse (por ejemplo, riego cada 3 días), indica la frecuencia. Si es una acción única, deja este campo vacío.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateFrequency() {
+    const select = document.getElementById('care_action_id');
+    const frequencyInput = document.getElementById('frequency_days');
+    const selectedOption = select.options[select.selectedIndex];
+    const actionType = selectedOption.dataset.type;
+    
+    // Suggest frequencies based on action type
+    if (actionType === 'watering') {
+        frequencyInput.value = 3;  // Default for watering
+    } else if (actionType === 'fertilizing') {
+        frequencyInput.value = 14;  // Default for fertilizing
+    } else {
+        frequencyInput.value = '';  // No default for others
+    }
+}
+</script>
+{% endblock %}

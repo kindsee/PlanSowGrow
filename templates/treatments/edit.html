@@ -17,18 +17,6 @@
             <div class="card-body">
                 <form method="POST">
                     <div class="mb-3">
-                        <label for="pest_id" class="form-label">Plaga *</label>
-                        <select class="form-select" id="pest_id" name="pest_id" required>
-                            <option value="">Selecciona una plaga</option>
-                            {% for pest in pests %}
-                            <option value="{{ pest.id }}" {% if pest.id == treatment.pest_id %}selected{% endif %}>
-                                {{ pest.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
                         <label for="name" class="form-label">Nombre del Tratamiento *</label>
                         <input type="text" class="form-control" id="name" name="name" 
                                value="{{ treatment.name }}" required>
@@ -46,7 +34,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                        <label for="frequency_days" class="form-label">Frecuencia Sugerida (días)</label>
                         <input type="number" class="form-control" id="frequency_days" name="frequency_days"
                                value="{{ treatment.frequency_days or '' }}"
                                placeholder="Cada cuántos días repetir">
@@ -62,6 +50,104 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Sección de Plagas Asociadas -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-bug"></i> Plagas que Combate</h5>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addPestModal">
+                    <i class="bi bi-plus-circle"></i> Añadir Plaga
+                </button>
+            </div>
+            <div class="card-body">
+                {% if treatment_pests %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Plaga</th>
+                                <th>Efectividad</th>
+                                <th>Notas</th>
+                                <th class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tp in treatment_pests %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('pests.edit_pest', pest_id=tp.pest.id) }}">
+                                        {{ tp.pest.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if tp.effectiveness == 'high' %}
+                                        <span class="badge bg-success">Alta</span>
+                                    {% elif tp.effectiveness == 'medium' %}
+                                        <span class="badge bg-warning">Media</span>
+                                    {% elif tp.effectiveness == 'low' %}
+                                        <span class="badge bg-secondary">Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td><small class="text-muted">{{ tp.notes or '-' }}</small></td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('treatments.remove_pest', treatment_id=treatment.id, pest_id=tp.pest.id) }}" 
+                                          style="display: inline;" onsubmit="return confirm('¿Eliminar asociación con esta plaga?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Este tratamiento no está asociado a ninguna plaga aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para añadir plaga -->
+<div class="modal fade" id="addPestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('treatments.add_pest', treatment_id=treatment.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Añadir Plaga al Tratamiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="pest_id" class="form-label">Plaga *</label>
+                        <select class="form-select" id="pest_id" name="pest_id" required>
+                            <option value="">Selecciona una plaga</option>
+                            {% for pest in all_pests %}
+                            <option value="{{ pest.id }}">{{ pest.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="effectiveness" class="form-label">Efectividad *</label>
+                        <select class="form-select" id="effectiveness" name="effectiveness" required>
+                            <option value="high" selected>Alta</option>
+                            <option value="medium">Media</option>
+                            <option value="low">Baja</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Añadir</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

@@ -12,7 +12,9 @@
 
 {% if cultures %}
     <div class="row">
-        {% for culture in cultures %}
+        {% for culture_data in cultures %}
+        {% set culture = culture_data.culture %}
+        {% set progress = culture_data.progress %}
         <div class="col-md-6 mb-4">
             <div class="card">
                 <div class="card-body">
@@ -24,6 +26,29 @@
                         <strong>Inicio:</strong> {{ culture.start_date.strftime('%d/%m/%Y') }}<br>
                         <strong>Tipo:</strong> <span class="badge bg-info">{{ culture.start_type }}</span>
                     </p>
+                    
+                    <!-- Progress indicators -->
+                    {% if progress %}
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <strong>Estado:</strong> 
+                            {% if progress.phase == 'growing' %}
+                                <span class="badge bg-info">Crecimiento {{ progress.growth_progress }}%</span>
+                                {% if progress.days_to_harvest and progress.days_to_harvest > 0 %}
+                                    <br><small>Faltan {{ progress.days_to_harvest }} días para cosecha</small>
+                                {% endif %}
+                            {% elif progress.phase == 'harvesting' %}
+                                <span class="badge bg-success">Cosecha {{ progress.harvest_progress }}%</span>
+                                {% if progress.days_to_harvest_end and progress.days_to_harvest_end > 0 %}
+                                    <br><small>Faltan {{ progress.days_to_harvest_end }} días para fin</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">Finalizado</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    {% endif %}
+                    
                     <p class="card-text">
                         <strong>Plantas:</strong><br>
                         {% for cp in culture.plants %}

@@ -73,6 +73,8 @@ class Culture(db.Model):
     # Relationships
     bed = db.relationship('RaisedBed', back_populates='cultures')
     plants = db.relationship('CulturePlant', back_populates='culture', lazy='dynamic')
+    treatments = db.relationship('CultureTreatment', back_populates='culture', lazy='dynamic')
+    cares = db.relationship('CultureCare', back_populates='culture', lazy='dynamic')
     calendar_events = db.relationship('CalendarEvent', back_populates='culture', lazy='dynamic')
     
     def __repr__(self):
@@ -121,7 +123,8 @@ class Pest(db.Model):
     
     # Relationships
     plant_pests = db.relationship('PlantPest', back_populates='pest', lazy='dynamic')
-    treatments = db.relationship('Treatment', back_populates='pest', lazy='dynamic')
+    pest_treatments = db.relationship('PestTreatment', back_populates='pest', lazy='dynamic')
+    treatments = db.relationship('Treatment', secondary='pest_treatments', viewonly=True, overlaps="pest_treatments")
     
     def __repr__(self):
         return f'<Pest {self.name}>'
@@ -152,23 +155,54 @@ class PlantPest(db.Model):
         return f'<PlantPest plant={self.plant_id} pest={self.pest_id}>'
 
 
+class PestTreatment(db.Model):
+    """
+    Association table linking pests to treatments.
+    A treatment can be effective against multiple pests.
+    A pest can have multiple effective treatments.
+    """
+    __tablename__ = 'pest_treatments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    pest_id = db.Column(db.Integer, db.ForeignKey('pests.id'), nullable=False)
+    treatment_id = db.Column(db.Integer, db.ForeignKey('treatments.id'), nullable=False)
+    effectiveness = db.Column(db.Enum('high', 'medium', 'low', name='effectiveness_enum'))
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    pest = db.relationship('Pest', back_populates='pest_treatments')
+    treatment = db.relationship('Treatment', back_populates='pest_treatments')
+    
+    __table_args__ = (
+        db.Index('idx_pest_id', 'pest_id'),
+        db.Index('idx_treatment_id', 'treatment_id'),
+        db.UniqueConstraint('pest_id', 'treatment_id', name='uq_pest_treatment'),
+    )
+    
+    def __repr__(self):
+        return f'<PestTreatment pest={self.pest_id} treatment={self.treatment_id}>'
+
+
 class Treatment(db.Model):
     """
-    Ecological treatments for specific pests.
+    Ecological treatments that can be applied to combat pests.
+    A treatment can be effective against multiple pests (many-to-many).
     """
     __tablename__ = 'treatments'
     
     id = db.Column(db.Integer, primary_key=True)
-    pest_id = db.Column(db.Integer, db.ForeignKey('pests.id'), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     application_method = db.Column(db.Text)
-    frequency_days = db.Column(db.Integer)  # How often to apply (in days)
+    frequency_days = db.Column(db.Integer)  # Suggested frequency (in days)
     is_ecological = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships
-    pest = db.relationship('Pest', back_populates='treatments')
+    pest_treatments = db.relationship('PestTreatment', back_populates='treatment', lazy='dynamic')
+    pests = db.relationship('Pest', secondary='pest_treatments', viewonly=True, overlaps="pest_treatments")
+    culture_treatments = db.relationship('CultureTreatment', back_populates='treatment', lazy='dynamic')
     calendar_events = db.relationship('CalendarEvent', back_populates='treatment', lazy='dynamic')
     
     def __repr__(self):
@@ -193,6 +227,7 @@ class CareAction(db.Model):
     
     # Relationships
     plant_cares = db.relationship('PlantCare', back_populates='care_action', lazy='dynamic')
+    culture_cares = db.relationship('CultureCare', back_populates='care_action', lazy='dynamic')
     calendar_events = db.relationship('CalendarEvent', back_populates='care_action', lazy='dynamic')
     
     def __repr__(self):
@@ -225,6 +260,52 @@ class PlantCare(db.Model):
     
     def __repr__(self):
         return f'<PlantCare plant={self.plant_id} care={self.care_action_id}>'
+
+
+class CultureTreatment(db.Model):
+    """
+    Association table linking treatments to specific cultures.
+    Allows custom timing for treatment application.
+    """
+    __tablename__ = 'culture_treatments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    culture_id = db.Column(db.Integer, db.ForeignKey('cultures.id'), nullable=False)
+    treatment_id = db.Column(db.Integer, db.ForeignKey('treatments.id'), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)  # When to start applying
+    frequency_days = db.Column(db.Integer)  # Override treatment's default frequency
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    culture = db.relationship('Culture', back_populates='treatments')
+    treatment = db.relationship('Treatment', back_populates='culture_treatments')
+    
+    def __repr__(self):
+        return f'<CultureTreatment culture={self.culture_id} treatment={self.treatment_id}>'
+
+
+class CultureCare(db.Model):
+    """
+    Association table linking care actions to specific cultures.
+    Allows scheduling care actions for a specific date.
+    """
+    __tablename__ = 'culture_cares'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    culture_id = db.Column(db.Integer, db.ForeignKey('cultures.id'), nullable=False)
+    care_action_id = db.Column(db.Integer, db.ForeignKey('care_actions.id'), nullable=False)
+    scheduled_date = db.Column(db.Date, nullable=False)  # When to perform this care
+    frequency_days = db.Column(db.Integer)  # How often to repeat (optional)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    culture = db.relationship('Culture', back_populates='cares')
+    care_action = db.relationship('CareAction', back_populates='culture_cares')
+    
+    def __repr__(self):
+        return f'<CultureCare culture={self.culture_id} care={self.care_action_id}>'
 
 
 class CalendarEvent(db.Model):

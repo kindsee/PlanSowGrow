@@ -20,6 +20,64 @@
 
 <div class="row mb-4">
     <div class="col-md-8">
+        <!-- Progress Card -->
+        {% if progress %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Progreso del Cultivo</h5>
+                
+                <div class="mb-3">
+                    <strong>Fase: </strong>
+                    {% if progress.phase == 'growing' %}
+                        <span class="badge bg-info">Crecimiento</span>
+                    {% elif progress.phase == 'harvesting' %}
+                        <span class="badge bg-success">Cosecha</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Finalizado</span>
+                    {% endif %}
+                    <small class="text-muted ms-2">({{ progress.days_since_start }} días desde inicio)</small>
+                </div>
+                
+                <!-- Growth Progress Bar -->
+                <div class="mb-3">
+                    <label class="form-label">Crecimiento:</label>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: {{ progress.growth_progress }}%;" 
+                             aria-valuenow="{{ progress.growth_progress }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ progress.growth_progress }}%
+                        </div>
+                    </div>
+                    {% if progress.days_to_harvest and progress.days_to_harvest > 0 %}
+                        <small class="text-muted">Faltan {{ progress.days_to_harvest }} días para cosecha</small>
+                    {% endif %}
+                </div>
+                
+                <!-- Harvest Progress Bar -->
+                {% if progress.harvest_progress is not none %}
+                <div class="mb-3">
+                    <label class="form-label">Cosecha:</label>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ progress.harvest_progress }}%;" 
+                             aria-valuenow="{{ progress.harvest_progress }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            {{ progress.harvest_progress }}%
+                        </div>
+                    </div>
+                    {% if progress.days_to_harvest_end and progress.days_to_harvest_end > 0 %}
+                        <small class="text-muted">Faltan {{ progress.days_to_harvest_end }} días para fin de cosecha</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Culture Info Card -->
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Información del Cultivo</h5>
@@ -74,6 +132,223 @@
                 {% endif %}
             </div>
         </div>
+        
+        <!-- Potential Pests Card -->
+        {% if potential_pests %}
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Plagas Potenciales</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Basado en las plantas de este cultivo, estas plagas podrían afectarlo:</p>
+                <div class="row row-cols-1 row-cols-md-2 g-3">
+                    {% for pest in potential_pests %}
+                    <div class="col">
+                        <div class="card h-100 border-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <a href="{{ url_for('pests.edit_pest', pest_id=pest.id) }}">
+                                        {{ pest.name }}
+                                    </a>
+                                </h6>
+                                {% if pest.symptoms %}
+                                <p class="card-text small text-muted">{{ pest.symptoms[:100] }}...</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Treatments and Cares Card -->
+        {% if culture.is_active %}
+        <div class="card mt-3">
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="activityTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="treatments-tab" data-bs-toggle="tab" data-bs-target="#treatments" type="button" role="tab">
+                            <i class="bi bi-shield-check"></i> Tratamientos
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="cares-tab" data-bs-toggle="tab" data-bs-target="#cares" type="button" role="tab">
+                            <i class="bi bi-heart"></i> Cuidados
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="events-tab" data-bs-toggle="tab" data-bs-target="#events" type="button" role="tab">
+                            <i class="bi bi-calendar-check"></i> Eventos
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="activityTabsContent">
+                    <!-- Treatments Tab -->
+                    <div class="tab-pane fade show active" id="treatments" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Tratamientos Asignados</h6>
+                            <a href="{{ url_for('cultures.add_treatment_to_culture', culture_id=culture.id) }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-circle"></i> Añadir
+                            </a>
+                        </div>
+                        
+                        {% if treatments %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Tratamiento</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Frecuencia</th>
+                                        <th>Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ct in treatments %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ url_for('treatments.edit_treatment', treatment_id=ct.treatment.id) }}">
+                                                {{ ct.treatment.name }}
+                                            </a>
+                                        </td>
+                                        <td>{{ ct.start_date.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            {% if ct.frequency_days %}
+                                                Cada {{ ct.frequency_days }} días
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if ct.notes %}
+                                                <small>{{ ct.notes[:50] }}...</small>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">No hay tratamientos asignados.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Cares Tab -->
+                    <div class="tab-pane fade" id="cares" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Cuidados Programados</h6>
+                            <a href="{{ url_for('cultures.add_care_to_culture', culture_id=culture.id) }}" 
+                               class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-circle"></i> Añadir
+                            </a>
+                        </div>
+                        
+                        {% if cares %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Cuidado</th>
+                                        <th>Fecha</th>
+                                        <th>Frecuencia</th>
+                                        <th>Notas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for cc in cares %}
+                                    <tr>
+                                        <td>{{ cc.care_action.name }}</td>
+                                        <td>{{ cc.scheduled_date.strftime('%d/%m/%Y') }}</td>
+                                        <td>
+                                            {% if cc.frequency_days %}
+                                                Cada {{ cc.frequency_days }} días
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if cc.notes %}
+                                                <small>{{ cc.notes[:50] }}...</small>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">No hay cuidados programados.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Events Tab -->
+                    <div class="tab-pane fade" id="events" role="tabpanel">
+                        <h6>Eventos Pendientes</h6>
+                        {% if events.pending %}
+                        <div class="list-group mb-3">
+                            {% for event in events.pending %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            {% if event.type == 'treatment' %}
+                                                <i class="bi bi-shield-check text-warning"></i> {{ event.treatment.name }}
+                                            {% else %}
+                                                <i class="bi bi-heart text-info"></i> {{ event.care_action.name }}
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">{{ event.scheduled_date.strftime('%d/%m/%Y') }}</small>
+                                    </div>
+                                    <span class="badge bg-warning">Pendiente</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No hay eventos pendientes.</p>
+                        {% endif %}
+                        
+                        <h6 class="mt-3">Eventos Completados</h6>
+                        {% if events.completed %}
+                        <div class="list-group">
+                            {% for event in events.completed[:10] %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            {% if event.type == 'treatment' %}
+                                                <i class="bi bi-shield-check text-success"></i> {{ event.treatment.name }}
+                                            {% else %}
+                                                <i class="bi bi-heart text-success"></i> {{ event.care_action.name }}
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">
+                                            Programado: {{ event.scheduled_date.strftime('%d/%m/%Y') }} | 
+                                            Completado: {{ event.completed_date.strftime('%d/%m/%Y') }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-success">Completado</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No hay eventos completados aún.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
