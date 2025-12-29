@@ -153,14 +153,18 @@ class BancalVisualizer {
         // Calculate total width needed
         const totalWidth = (quantity - 1) * spacingCm;
         
+        // Margin from edges (20cm on each side)
+        const EDGE_MARGIN = 20;
+        const usableWidth = this.BED_WIDTH_CM - (2 * EDGE_MARGIN);
+        
         // Determine starting X position based on alignment
         let startX;
         if (alignment === 'left') {
-            startX = 0;
+            startX = EDGE_MARGIN;
         } else if (alignment === 'right') {
-            startX = this.BED_WIDTH_CM - totalWidth;
+            startX = this.BED_WIDTH_CM - totalWidth - EDGE_MARGIN;
         } else { // center (default)
-            startX = (this.BED_WIDTH_CM - totalWidth) / 2;
+            startX = EDGE_MARGIN + (usableWidth - totalWidth) / 2;
         }
         
         for (let i = 0; i < quantity; i++) {
