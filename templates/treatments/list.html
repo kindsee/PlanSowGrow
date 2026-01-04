@@ -11,52 +11,44 @@
 </div>
 
 {% if treatments %}
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Tratamiento</th>
-                    <th>Descripción</th>
-                    <th>Frecuencia</th>
-                    <th>Método</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for treatment in treatments %}
-                <tr>
-                    <td><strong>{{ treatment.name }}</strong></td>
-                    <td>
-                        {% if treatment.description %}
-                            {{ treatment.description[:80] }}{% if treatment.description|length > 80 %}...{% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if treatment.frequency_days %}
-                            Cada {{ treatment.frequency_days }} días
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if treatment.application_method %}
-                            {{ treatment.application_method[:40] }}{% if treatment.application_method|length > 40 %}...{% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('treatments.edit_treatment', treatment_id=treatment.id) }}" 
-                           class="btn btn-sm btn-warning">
-                            <i class="bi bi-pencil"></i> Editar
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="row">
+        {% for treatment in treatments %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ treatment.name }}</h5>
+                    
+                    {% if treatment.description %}
+                    <div class="mb-3">
+                        <strong class="text-muted small">Descripción:</strong>
+                        <div class="card-text">{{ treatment.description|safe_html }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if treatment.application_method %}
+                    <div class="mb-3">
+                        <strong class="text-muted small">Método de Aplicación:</strong>
+                        <div class="card-text">{{ treatment.application_method|safe_html }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if treatment.frequency_days %}
+                    <div class="mb-2">
+                        <span class="badge bg-info">
+                            <i class="bi bi-clock"></i> Cada {{ treatment.frequency_days }} días
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('treatments.edit_treatment', treatment_id=treatment.id) }}" 
+                       class="btn btn-sm btn-warning">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 {% else %}
     <div class="alert alert-info">

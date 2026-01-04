@@ -22,12 +22,22 @@
                 {% for event in events %}
                 <tr class="{% if event.completed %}table-secondary{% endif %}">
                     <td>{{ event.scheduled_date.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ event.culture.bed.name }}</td>
+                    <td>
+                        <a href="{{ url_for('cultures.view_culture', culture_id=event.culture.id) }}">
+                            {{ event.culture.bed.name }}
+                        </a>
+                    </td>
                     <td>
                         {% if event.care_action %}
-                            <i class="bi bi-scissors"></i> {{ event.care_action.name }}
+                            <i class="bi bi-scissors"></i> 
+                            <a href="{{ url_for('care.edit_care_action', care_id=event.care_action.id) }}">
+                                {{ event.care_action.name }}
+                            </a>
                         {% elif event.treatment %}
-                            <i class="bi bi-bug"></i> {{ event.treatment.name }}
+                            <i class="bi bi-bug"></i> 
+                            <a href="{{ url_for('treatments.edit_treatment', treatment_id=event.treatment.id) }}">
+                                {{ event.treatment.name }}
+                            </a>
                         {% endif %}
                     </td>
                     <td>

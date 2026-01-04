@@ -30,8 +30,9 @@
                     
                     <div class="mb-3">
                         <label for="description" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"
-                                  placeholder="Describe cómo realizar esta acción"></textarea>
+                        <input type="hidden" id="description" name="description">
+                        <div class="rich-text-editor" data-input="description" style="min-height: 150px;"></div>
+                        <small class="text-muted">Describe cómo realizar esta acción</small>
                     </div>
                     
                     <div class="d-flex gap-2">

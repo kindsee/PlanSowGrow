@@ -3,7 +3,9 @@ Flask application initialization for PlanSowGrow.
 """
 import os
 from flask import Flask
+from markupsafe import Markup
 from extensions import db
+import bleach
 
 
 def create_app(config_name=None):
@@ -27,6 +29,28 @@ def create_app(config_name=None):
     
     # Initialize extensions
     db.init_app(app)
+    
+    # Register Jinja2 filters
+    @app.template_filter('safe_html')
+    def safe_html_filter(text):
+        """Sanitize HTML for safe rendering."""
+        if not text:
+            return ''
+        
+        # Allow common formatting tags and preserve line breaks
+        allowed_tags = ['p', 'br', 'strong', 'em', 'u', 's', 'h1', 'h2', 'h3', 
+                       'ul', 'ol', 'li', 'a', 'blockquote', 'code', 'pre']
+        allowed_attrs = {'a': ['href', 'title'], '*': ['class']}
+        
+        cleaned = bleach.clean(
+            text,
+            tags=allowed_tags,
+            attributes=allowed_attrs,
+            strip=True
+        )
+        
+        # Return as Markup object so Jinja2 doesn't escape it
+        return Markup(cleaned)
     
     # Create tables within app context
     with app.app_context():

@@ -65,13 +65,15 @@
                     
                     <div class="mb-3">
                         <label for="description" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="description" name="description" rows="3">{{ plant.description or '' }}</textarea>
+                        <input type="hidden" id="description" name="description" value="{{ plant.description or '' }}">
+                        <div class="rich-text-editor" data-input="description" style="min-height: 150px;"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="notes" class="form-label">Notas</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3"
-                                  placeholder="Requisitos especiales, consejos de cultivo, etc.">{{ plant.notes or '' }}</textarea>
+                        <input type="hidden" id="notes" name="notes" value="{{ plant.notes or '' }}">
+                        <div class="rich-text-editor" data-input="notes" style="min-height: 150px;"></div>
+                        <small class="text-muted">Requisitos especiales, consejos de cultivo, etc.</small>
                     </div>
                     
                     <div class="d-flex gap-2">
@@ -83,6 +85,93 @@
                         </a>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Cuidados Recomendados -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-heart"></i> Cuidados Recomendados</h5>
+                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#addCareModal">
+                    <i class="bi bi-plus-circle"></i> Agregar Cuidado
+                </button>
+            </div>
+            <div class="card-body">
+                {% if plant_cares %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Cuidado</th>
+                                <th>Tipo</th>
+                                <th>Días tras siembra</th>
+                                <th>Frecuencia</th>
+                                <th>Notas</th>
+                                <th style="width: 100px;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pc in plant_cares %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('care.edit_care_action', care_id=pc.care_action.id) }}" 
+                                       class="text-decoration-none fw-bold">
+                                        {{ pc.care_action.name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if pc.care_action.action_type == 'pruning' %}
+                                        <span class="badge bg-success">✂️ Poda</span>
+                                    {% elif pc.care_action.action_type == 'pinching' %}
+                                        <span class="badge bg-info">🤏 Despunte</span>
+                                    {% elif pc.care_action.action_type == 'tutoring' %}
+                                        <span class="badge bg-primary">🎋 Entutorado</span>
+                                    {% elif pc.care_action.action_type == 'fertilizing' %}
+                                        <span class="badge bg-warning text-dark">💚 Abono</span>
+                                    {% elif pc.care_action.action_type == 'watering' %}
+                                        <span class="badge bg-primary">💧 Riego</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ pc.care_action.action_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pc.days_after_planting %}
+                                        <span class="badge bg-info">{{ pc.days_after_planting }} días</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pc.frequency_days %}
+                                        <span class="badge bg-secondary">Cada {{ pc.frequency_days }} días</span>
+                                    {% else %}
+                                        <span class="text-muted">Una vez</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ (pc.notes or '')[:50] }}{% if pc.notes and pc.notes|length > 50 %}...{% endif %}</small>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('plants.remove_care', plant_id=plant.id) }}" 
+                                          style="display: inline;"
+                                          onsubmit="return confirm('¿Eliminar esta asociación?');">
+                                        <input type="hidden" name="care_action_id" value="{{ pc.care_action.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i> No hay cuidados asociados a esta planta. 
+                    Haz clic en "Agregar Cuidado" para asociar cuidados recomendados.
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -153,6 +242,65 @@
                 </div>
                 {% endif %}
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Agregar Cuidado -->
+<div class="modal fade" id="addCareModal" tabindex="-1" aria-labelledby="addCareModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('plants.add_care', plant_id=plant.id) }}">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="addCareModalLabel">
+                        <i class="bi bi-plus-circle"></i> Agregar Cuidado a {{ plant.name }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="care_action_id" class="form-label">Seleccionar Cuidado *</label>
+                        <select class="form-select" id="care_action_id" name="care_action_id" required>
+                            <option value="">Selecciona un cuidado...</option>
+                            {% for care in all_cares %}
+                            <option value="{{ care.id }}">{{ care.name }} ({{ care.action_type }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="days_after_planting" class="form-label">Días después de la siembra</label>
+                        <input type="number" class="form-control" id="days_after_planting" name="days_after_planting" 
+                               min="0" placeholder="Ej: 30">
+                        <div class="form-text">
+                            ¿Cuántos días después de plantar se debe realizar este cuidado?
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="frequency_days" class="form-label">Frecuencia (días)</label>
+                        <input type="number" class="form-control" id="frequency_days" name="frequency_days" 
+                               min="1" placeholder="Ej: 7">
+                        <div class="form-text">
+                            ¿Cada cuántos días se debe repetir? Dejar vacío si es una sola vez.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="care_notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="care_notes" name="notes" rows="3"
+                                  placeholder="Detalles específicos, herramientas necesarias, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-circle"></i> Agregar Cuidado
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

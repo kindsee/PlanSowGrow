@@ -34,7 +34,11 @@
                     
                     {% if plant.description %}
                     <dt class="col-sm-4">Descripción:</dt>
-                    <dd class="col-sm-8">{{ plant.description }}</dd>
+                    <dd class="col-sm-8">
+                        <div class="ql-editor" style="padding: 0;">
+                            {{ plant.description | safe_html | safe }}
+                        </div>
+                    </dd>
                     {% endif %}
                     {% if plant.growth_days %}
                     <dt class="col-sm-4">Días de Crecimiento:</dt>
@@ -52,7 +56,11 @@
                     
                     {% if plant.notes %}
                     <dt class="col-sm-4">Notas:</dt>
-                    <dd class="col-sm-8">{{ plant.notes }}</dd>
+                    <dd class="col-sm-8">
+                        <div class="ql-editor" style="padding: 0;">
+                            {{ plant.notes | safe_html | safe }}
+                        </div>
+                    </dd>
                     {% endif %}
                 </dl>
             </div>
@@ -85,6 +93,64 @@
                     {% endif %}
                 </td>
                 <td>{{ pest_info.notes or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if cares %}
+<h2 class="mb-3">Cuidados Recomendados</h2>
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Acción</th>
+                <th>Tipo</th>
+                <th>Días tras siembra</th>
+                <th>Frecuencia</th>
+                <th>Notas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for care_info in cares %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('care.edit_care_action', care_id=care_info.care_action.id) }}">
+                        {{ care_info.care_action.name }}
+                    </a>
+                </td>
+                <td>
+                    {% if care_info.care_action.action_type == 'pruning' %}
+                        <span class="badge bg-success">✂️ Poda</span>
+                    {% elif care_info.care_action.action_type == 'pinching' %}
+                        <span class="badge bg-info">🤏 Despunte</span>
+                    {% elif care_info.care_action.action_type == 'tutoring' %}
+                        <span class="badge bg-primary">🎋 Entutorado</span>
+                    {% elif care_info.care_action.action_type == 'fertilizing' %}
+                        <span class="badge bg-warning">💚 Abono</span>
+                    {% elif care_info.care_action.action_type == 'watering' %}
+                        <span class="badge bg-primary">💧 Riego</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ care_info.care_action.action_type }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if care_info.days_after_planting %}
+                        <span class="badge bg-info">{{ care_info.days_after_planting }} días</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if care_info.frequency_days %}
+                        <span class="badge bg-secondary">Cada {{ care_info.frequency_days }} días</span>
+                    {% else %}
+                        <span class="text-muted">Una vez</span>
+                    {% endif %}
+                </td>
+                <td>{{ care_info.notes or '-' }}</td>
             </tr>
             {% endfor %}
         </tbody>

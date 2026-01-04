@@ -245,6 +245,31 @@ def create_culture(bed_id: int, start_date: date, start_type: str,
             alignment=alignment
         )
         db.session.add(culture_plant)
+        
+        # Auto-generate care actions for this plant based on PlantCare recommendations
+        plant_cares = db.session.query(PlantCare).filter_by(plant_id=plant_id).all()
+        for plant_care in plant_cares:
+            # Calculate scheduled date based on days_after_planting
+            if plant_care.days_after_planting is not None:
+                from datetime import timedelta
+                scheduled_date = start_date + timedelta(days=plant_care.days_after_planting)
+                
+                # Check if this care action is already scheduled for this culture
+                existing_care = db.session.query(CultureCare).filter_by(
+                    culture_id=culture.id,
+                    care_action_id=plant_care.care_action_id,
+                    scheduled_date=scheduled_date
+                ).first()
+                
+                if not existing_care:
+                    culture_care = CultureCare(
+                        culture_id=culture.id,
+                        care_action_id=plant_care.care_action_id,
+                        scheduled_date=scheduled_date,
+                        frequency_days=plant_care.frequency_days,
+                        notes=plant_care.notes or f'Auto-generado para {db.session.get(Plant, plant_id).name}'
+                    )
+                    db.session.add(culture_care)
     
     db.session.commit()
     return culture
@@ -345,6 +370,93 @@ def get_pests_for_plant(plant_id: int) -> List[Dict[str, Any]]:
         'severity': pp.severity,
         'notes': pp.notes
     } for pp in plant_pests]
+
+
+def get_cares_for_plant(plant_id: int) -> List[Dict[str, Any]]:
+    """
+    Get all care actions recommended for a specific plant.
+    
+    Args:
+        plant_id: ID of the plant
+    
+    Returns:
+        List of dictionaries with care action and timing information
+    """
+    plant_cares = db.session.query(PlantCare).filter_by(plant_id=plant_id).all()
+    return [{
+        'plant_care_id': pc.id,
+        'care_action': pc.care_action,
+        'days_after_planting': pc.days_after_planting,
+        'frequency_days': pc.frequency_days,
+        'notes': pc.notes
+    } for pc in plant_cares]
+
+
+def add_care_to_plant(plant_id: int, care_action_id: int, 
+                       days_after_planting: int = None, 
+                       frequency_days: int = None,
+                       notes: str = '') -> PlantCare:
+    """
+    Add a care action to a plant or update the relationship if it exists.
+    
+    Args:
+        plant_id: ID of the plant
+        care_action_id: ID of the care action
+        days_after_planting: Days after planting to perform this care
+        frequency_days: How often to repeat (in days)
+        notes: Optional notes about this care-plant relationship
+    
+    Returns:
+        The created or updated PlantCare association
+    """
+    # Check if the association already exists
+    plant_care = db.session.query(PlantCare).filter_by(
+        plant_id=plant_id,
+        care_action_id=care_action_id,
+        days_after_planting=days_after_planting
+    ).first()
+    
+    if plant_care:
+        # Update existing association
+        plant_care.frequency_days = frequency_days
+        plant_care.notes = notes
+    else:
+        # Create new association
+        plant_care = PlantCare(
+            plant_id=plant_id,
+            care_action_id=care_action_id,
+            days_after_planting=days_after_planting,
+            frequency_days=frequency_days,
+            notes=notes
+        )
+        db.session.add(plant_care)
+    
+    db.session.commit()
+    return plant_care
+
+
+def remove_care_from_plant(plant_id: int, care_action_id: int) -> bool:
+    """
+    Remove a care action association from a plant.
+    
+    Args:
+        plant_id: ID of the plant
+        care_action_id: ID of the care action to remove
+    
+    Returns:
+        True if removed, False if not found
+    """
+    plant_care = db.session.query(PlantCare).filter_by(
+        plant_id=plant_id,
+        care_action_id=care_action_id
+    ).first()
+    
+    if plant_care:
+        db.session.delete(plant_care)
+        db.session.commit()
+        return True
+    
+    return False
 
 
 def add_pest_to_plant(plant_id: int, pest_id: int, severity: str = 'medium', notes: str = '') -> PlantPest:

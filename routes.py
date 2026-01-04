@@ -142,7 +142,8 @@ def view_plant(plant_id):
         return redirect(url_for('plants.list_plants'))
     
     pests = services.get_pests_for_plant(plant_id)
-    return render_template('plants/view.html', plant=plant, pests=pests)
+    cares = services.get_cares_for_plant(plant_id)
+    return render_template('plants/view.html', plant=plant, pests=pests, cares=cares)
 
 
 @plants_bp.route('/<int:plant_id>/edit', methods=['GET', 'POST'])
@@ -174,7 +175,13 @@ def edit_plant(plant_id):
     plant_pests = services.get_pests_for_plant(plant_id)
     all_pests = services.get_all_pests()
     
-    return render_template('plants/edit.html', plant=plant, plant_pests=plant_pests, all_pests=all_pests)
+    # Load associated cares and all available care actions
+    plant_cares = services.get_cares_for_plant(plant_id)
+    all_cares = services.get_all_care_actions()
+    
+    return render_template('plants/edit.html', plant=plant, 
+                         plant_pests=plant_pests, all_pests=all_pests,
+                         plant_cares=plant_cares, all_cares=all_cares)
 
 
 @plants_bp.route('/<int:plant_id>/add_pest', methods=['POST'])
@@ -215,6 +222,48 @@ def remove_pest(plant_id):
     
     if not pest_id:
         flash('Plaga no especificada', 'error')
+        return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+
+
+@plants_bp.route('/<int:plant_id>/add_care', methods=['POST'])
+def add_care(plant_id):
+    """Add a care action association to a plant."""
+    plant = services.get_plant_by_id(plant_id)
+    if not plant:
+        flash('Planta no encontrada', 'error')
+        return redirect(url_for('plants.list_plants'))
+    
+    care_action_id = request.form.get('care_action_id', type=int)
+    days_after_planting = request.form.get('days_after_planting', type=int)
+    frequency_days = request.form.get('frequency_days', type=int)
+    notes = request.form.get('notes', '')
+    
+    if not care_action_id:
+        flash('Debes seleccionar un cuidado', 'error')
+        return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+    
+    try:
+        services.add_care_to_plant(plant_id, care_action_id, days_after_planting, frequency_days, notes)
+        care = services.get_care_action_by_id(care_action_id)
+        flash(f'Cuidado "{care.name}" asociado correctamente', 'success')
+    except Exception as e:
+        flash(f'Error al asociar el cuidado: {str(e)}', 'error')
+    
+    return redirect(url_for('plants.edit_plant', plant_id=plant_id))
+
+
+@plants_bp.route('/<int:plant_id>/remove_care', methods=['POST'])
+def remove_care(plant_id):
+    """Remove a care action association from a plant."""
+    plant = services.get_plant_by_id(plant_id)
+    if not plant:
+        flash('Planta no encontrada', 'error')
+        return redirect(url_for('plants.list_plants'))
+    
+    care_action_id = request.form.get('care_action_id', type=int)
+    
+    if not care_action_id:
+        flash('Cuidado no especificado', 'error')
         return redirect(url_for('plants.edit_plant', plant_id=plant_id))
     
     try:

@@ -21,7 +21,7 @@
                         <span class="badge bg-info">{{ care.action_type }}</span>
                     </h5>
                     {% if care.description %}
-                    <p class="card-text">{{ care.description }}</p>
+                    <div class="card-text">{{ care.description|safe_html }}</div>
                     {% endif %}
                 </div>
                 <div class="card-footer bg-transparent">

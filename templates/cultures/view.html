@@ -175,7 +175,7 @@
                                     </a>
                                 </h6>
                                 {% if pest.symptoms %}
-                                <p class="card-text small text-muted">{{ pest.symptoms[:100] }}...</p>
+                                <p class="card-text small text-muted">{{ pest.symptoms|striptags|truncate(100) }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -287,7 +287,11 @@
                                 <tbody>
                                     {% for cc in cares %}
                                     <tr>
-                                        <td>{{ cc.care_action.name }}</td>
+                                        <td>
+                                            <a href="{{ url_for('care.edit_care_action', care_id=cc.care_action.id) }}">
+                                                {{ cc.care_action.name }}
+                                            </a>
+                                        </td>
                                         <td>{{ cc.scheduled_date.strftime('%d/%m/%Y') }}</td>
                                         <td>
                                             {% if cc.frequency_days %}
@@ -324,9 +328,15 @@
                                     <div>
                                         <h6 class="mb-1">
                                             {% if event.type == 'treatment' %}
-                                                <i class="bi bi-shield-check text-warning"></i> {{ event.treatment.name }}
+                                                <i class="bi bi-shield-check text-warning"></i> 
+                                                <a href="{{ url_for('treatments.edit_treatment', treatment_id=event.treatment.id) }}">
+                                                    {{ event.treatment.name }}
+                                                </a>
                                             {% else %}
-                                                <i class="bi bi-heart text-info"></i> {{ event.care_action.name }}
+                                                <i class="bi bi-heart text-info"></i> 
+                                                <a href="{{ url_for('care.edit_care_action', care_id=event.care_action.id) }}">
+                                                    {{ event.care_action.name }}
+                                                </a>
                                             {% endif %}
                                         </h6>
                                         <small class="text-muted">{{ event.scheduled_date.strftime('%d/%m/%Y') }}</small>

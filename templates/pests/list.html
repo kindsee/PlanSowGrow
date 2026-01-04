@@ -21,12 +21,12 @@
                     <p class="text-muted"><em>{{ pest.scientific_name }}</em></p>
                     {% endif %}
                     {% if pest.description %}
-                    <p class="card-text">{{ pest.description }}</p>
+                    <div class="card-text">{{ pest.description|safe_html }}</div>
                     {% endif %}
                     {% if pest.symptoms %}
-                    <p class="card-text">
-                        <strong>Síntomas:</strong> {{ pest.symptoms }}
-                    </p>
+                    <div class="card-text">
+                        <strong>Síntomas:</strong> {{ pest.symptoms|safe_html }}
+                    </div>
                     {% endif %}
                 </div>
                 <div class="card-footer bg-transparent">

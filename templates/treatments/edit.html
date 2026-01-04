@@ -24,13 +24,15 @@
                     
                     <div class="mb-3">
                         <label for="description" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="description" name="description" rows="3">{{ treatment.description or '' }}</textarea>
+                        <input type="hidden" id="description" name="description" value="{{ treatment.description or '' }}">
+                        <div class="rich-text-editor" data-input="description" style="min-height: 150px;"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="application_method" class="form-label">Método de Aplicación</label>
-                        <textarea class="form-control" id="application_method" name="application_method" rows="2"
-                                  placeholder="Cómo y cuándo aplicar el tratamiento">{{ treatment.application_method or '' }}</textarea>
+                        <input type="hidden" id="application_method" name="application_method" value="{{ treatment.application_method or '' }}">
+                        <div class="rich-text-editor" data-input="application_method" style="min-height: 120px;"></div>
+                        <small class="text-muted">Cómo y cuándo aplicar el tratamiento</small>
                     </div>
                     
                     <div class="mb-3">

@@ -22,13 +22,14 @@
                     
                     <div class="mb-3">
                         <label for="description" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <input type="hidden" id="description" name="description">
+                        <div class="rich-text-editor" data-input="description"></div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="symptoms" class="form-label">Síntomas</label>
-                        <textarea class="form-control" id="symptoms" name="symptoms" rows="3"
-                                  placeholder="Cómo identificar esta plaga"></textarea>
+                        <input type="hidden" id="symptoms" name="symptoms">
+                        <div class="rich-text-editor" data-input="symptoms" data-placeholder="Cómo identificar esta plaga"></div>
                     </div>
                     
                     <div class="d-flex gap-2">
